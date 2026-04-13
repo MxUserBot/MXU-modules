@@ -33,7 +33,7 @@ class TranslatorModule(loader.Module):
             print(raw)
 
             if not raw:
-                return await mx.answer(self.strings["no_args"])
+                return await utils.answer(mx, self.strings["no_args"])
 
             parts = raw.split(maxsplit=1)
 
@@ -46,12 +46,12 @@ class TranslatorModule(loader.Module):
             #     if len(lang) > 5 or any(c.isdigit() for c in lang):
             #         lang = "en"
             #     else:
-            #         return await mx.answer(self.strings["bad_lang"])
+            #         return await utils.answer(mx, self.strings["bad_lang"])
 
             text = parts[1].strip() if len(parts) > 1 else ""
 
             if not text:
-                return await mx.answer(self.strings["no_text"])
+                return await utils.answer(mx, self.strings["no_text"])
 
             self.logger.info(f"[TR] lang={lang} text={text[:80]!r}")
 
@@ -67,10 +67,10 @@ class TranslatorModule(loader.Module):
                         dest="en"
                     )
 
-            await mx.answer(self.strings.get("result").format(
+            await utils.answer(mx, self.strings.get("result").format(
                 result=result.text
             ))
 
         except Exception as e:
             self.logger.exception(f"[TR] failed: {e}")
-            await mx.answer(self.strings["error"])
+            await utils.answer(mx, self.strings["error"])

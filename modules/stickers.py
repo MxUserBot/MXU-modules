@@ -8,7 +8,7 @@ from typing import Any
 from mautrix.types import MessageEvent
 
 import av
-from ...core import loader
+from ...core import loader, utils
 
 
 class Meta:
@@ -77,11 +77,11 @@ class TelegramStickerPortModule(loader.Module):
 
         match = re.search(r"t\.me/addstickers/([A-Za-z0-9_]+)", body)
         if not match:
-            await mx.answer(self.strings.get("bad_url"))
+            await utils.answer(mx, self.strings.get("bad_url"))
             return
 
         pack_name = match.group(1)
-        await mx.answer(self.strings.get("start"))
+        await utils.answer(mx, self.strings.get("start"))
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -90,7 +90,7 @@ class TelegramStickerPortModule(loader.Module):
                     data = await r.json()
 
                 if not data.get("ok"):
-                    await mx.answer(self.strings.get("error"))
+                    await utils.answer(mx, self.strings.get("error"))
                     return
 
                 result = data["result"]
@@ -154,6 +154,6 @@ class TelegramStickerPortModule(loader.Module):
                     state_key=pack_id
                 )
 
-                await mx.answer(self.strings.get("done").format(count=len(images)))
+                await utils.answer(mx, self.strings.get("done").format(count=len(images)))
         except Exception:
-            await mx.answer(self.strings.get("error"))
+            await utils.answer(mx, self.strings.get("error"))

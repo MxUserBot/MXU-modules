@@ -12,7 +12,7 @@ from mautrix.types import (
     MediaMessageEventContent, ImageInfo, VideoInfo
 )
 from mautrix.crypto.attachments import encrypt_attachment
-from ...core import loader
+from ...core import loader, utils
 
 
 class Meta:
@@ -98,9 +98,9 @@ class MatrixModule(loader.Module):
         url = matches[0] if matches else None
 
         if not url:
-            return await mx.answer(self.strings.get("no_url"))
+            return await utils.answer(mx, self.strings.get("no_url"))
 
-        progress = await mx.answer(self.strings.get("downloading"))
+        progress = await utils.answer(mx, self.strings.get("downloading"))
         
         api = TikTokAPI()
         try:
@@ -141,7 +141,7 @@ class MatrixModule(loader.Module):
                     os.remove(file_path)
 
         except Exception as e:
-            await mx.answer(self.strings.get("error").format(err=str(e)))
+            await utils.answer(mx, self.strings.get("error").format(err=str(e)))
         
         finally:
             await api.close()

@@ -1,15 +1,10 @@
-import aiohttp
-from mautrix.types import (
-    MessageEvent, ImageInfo, 
-)
-from ...core import loader
-from mautrix.client import Client
+from ...core import loader, utils
 
 
 class Meta:
     name = "CatGirlModule"
     _cls_doc = "Отправляет фото кошко девочек"
-    version = "1.0.0"
+    version = "1.0.1"
     tags = ["api"]
 
 
@@ -18,27 +13,16 @@ class CatGirlModule(loader.Module):
     strings = {"error": "Ошибка API"}
 
     @loader.command()
-    async def catgirl(self, mx: Client, event: MessageEvent):
+    async def catgirl(self, mx, event):
         """Отправляет фото кошко-девочки"""
 
-        async with aiohttp.ClientSession() as s:
-            async with s.get("https://api.nekosia.cat/api/v1/images/catgirl") as r:
-                if r.status != 200: 
-                    return await mx.send_text(event.room_id, self.strings["error"])
-                data = await r.json()
-                url = data["image"]["original"]["url"]
-            
-            async with s.get(url) as img:
-                image_bytes = await img.read()
+                
+        api_url = "https://api.nekosia.cat/api/v1/images/catgirl"
+        data = await utils.request(api_url, params={"rating": "safe"})
 
 
-        await mx.client.send_image(
-            room_id=event.room_id,
-            file_bytes=image_bytes,
-            info=ImageInfo(
-                mimetype="image/png",
-                size=len(image_bytes)
-            ),
-            file_name="catgirl.png",
-            caption="Моя кошко-девочка"
-        )
+        url = data["image"]["original"]["url"]
+        
+
+
+        await utils.send_image(mx, event, url, file_name=f"{data['id']}.jpg")
