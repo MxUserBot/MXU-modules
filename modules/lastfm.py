@@ -9,7 +9,7 @@ from ...core import loader, utils
 class Meta:
     name = "LastFMModule"
     _cls_doc = "Отображение текущей музыки из LastFM с анимацией обложки"
-    version = "1.2.0"
+    version = "1.2.1"
     tags = ["music"]
 
 
@@ -108,6 +108,7 @@ class LastFMModule(loader.Module):
         images = track.get("image", [])
         cover_url = images[-1].get("#text") if images else None
 
+        img_bytes = None
         if cover_url:
             img_bytes = await utils.request(cover_url, return_type="bytes")
 

@@ -15,6 +15,32 @@
       ]
     },
     {
+      "id": "purgeallmymessages",
+      "path": "purgeallmymessages.py",
+      "commands": [
+        "purgeallme"
+      ],
+      "name": "PurgeAllMessagesModule",
+      "description": "Позволяет удялять всё сообщения в комнате",
+      "version": "1.0.0",
+      "tags": [
+        "messages"
+      ]
+    },
+    {
+      "id": "catgirl",
+      "path": "catgirl.py",
+      "commands": [
+        "catgirl"
+      ],
+      "name": "CatGirlModule",
+      "description": "Отправляет фото кошко девочек",
+      "version": "1.0.1",
+      "tags": [
+        "api"
+      ]
+    },
+    {
       "id": "lastfm",
       "path": "lastfm.py",
       "commands": [
@@ -24,10 +50,27 @@
         "lfstop"
       ],
       "name": "LastFMModule",
-      "description": "Отображение текущей музыки из LastFM",
-      "version": "1.0.0",
+      "description": "Отображение текущей музыки из LastFM с анимацией обложки",
+      "version": "1.2.1",
       "tags": [
         "music"
+      ]
+    },
+    {
+      "id": "tgbridge",
+      "path": "tgbridge.py",
+      "commands": [
+        "tgsync"
+      ],
+      "name": "TelegramPMBridge",
+      "description": "Мост для всех ЛС Telegram с фоновой синхронизацией и Пространствами.",
+      "version": "3.1.0",
+      "dependencies": [
+        "telethon"
+      ],
+      "tags": [
+        "bridge",
+        "pm"
       ]
     },
     {
@@ -44,19 +87,6 @@
       ]
     },
     {
-      "id": "purgeallmymessages",
-      "path": "purgeallmymessages.py",
-      "commands": [
-        "purgeallme"
-      ],
-      "name": "PurgeAllMessagesModule",
-      "description": "Позволяет удялять всё сообщения в комнате",
-      "version": "1.0.0",
-      "tags": [
-        "messages"
-      ]
-    },
-    {
       "id": "astolfo",
       "path": "astolfo.py",
       "commands": [
@@ -64,7 +94,7 @@
       ],
       "name": "AstolfoModule",
       "description": "Скидывает случайные изображения Астольфо с astolfo.rocks",
-      "version": "1.0.0",
+      "version": "1.1",
       "tags": [
         "api"
       ]
@@ -97,19 +127,6 @@
       "dependencies": [
         "av",
         "pillow"
-      ]
-    },
-    {
-      "id": "catgirl",
-      "path": "catgirl.py",
-      "commands": [
-        "catgirl"
-      ],
-      "name": "CatGirlModule",
-      "description": "Отправляет фото кошко девочек",
-      "version": "1.0.0",
-      "tags": [
-        "api"
       ]
     }
   ]
