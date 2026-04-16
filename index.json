@@ -128,6 +128,20 @@
         "av",
         "pillow"
       ]
+    },
+    {
+      "id": "afk",
+      "path": "afk.py",
+      "commands": [
+        "afk",
+        "unafk"
+      ],
+      "name": "AFK",
+      "description": "AFK auto-reply for DMs",
+      "version": "1.0.0",
+      "tags": [
+        "system"
+      ]
     }
   ]
 }
