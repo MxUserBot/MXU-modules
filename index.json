@@ -2,7 +2,7 @@
   "modules": [
     {
       "id": "welcome",
-      "path": "welcome.py",
+      "path": "modules/welcome.py",
       "commands": [
         "welcomecfg",
         "setwelcome"
@@ -16,7 +16,7 @@
     },
     {
       "id": "purgeallmymessages",
-      "path": "purgeallmymessages.py",
+      "path": "modules/purgeallmymessages.py",
       "commands": [
         "purgeallme"
       ],
@@ -29,7 +29,7 @@
     },
     {
       "id": "tgbridge",
-      "path": "tgbridge.py",
+      "path": "modules/tgbridge.py",
       "commands": [
         "tgsync"
       ],
@@ -46,7 +46,7 @@
     },
     {
       "id": "yt-misic",
-      "path": "yt-misic.py",
+      "path": "modules/yt-misic.py",
       "commands": [
         "ytm"
       ],
@@ -60,7 +60,7 @@
     },
     {
       "id": "quotecard",
-      "path": "quotecard.py",
+      "path": "modules/quotecard.py",
       "commands": [
         "qcard"
       ],
@@ -77,7 +77,7 @@
     },
     {
       "id": "quote",
-      "path": "quote.py",
+      "path": "modules/quote.py",
       "commands": [
         "q"
       ],
@@ -94,7 +94,7 @@
     },
     {
       "id": "demotivator",
-      "path": "demotivator.py",
+      "path": "modules/demotivator.py",
       "commands": [
         "demot"
       ],
@@ -111,7 +111,7 @@
     },
     {
       "id": "r",
-      "path": "r.py",
+      "path": "modules/r.py",
       "commands": [
         "currency",
         "convert"
@@ -126,7 +126,7 @@
     },
     {
       "id": "rule34",
-      "path": "rule34.py",
+      "path": "modules/rule34.py",
       "commands": [
         "rule34"
       ],
@@ -140,7 +140,7 @@
     },
     {
       "id": "leaver",
-      "path": "leaver.py",
+      "path": "modules/leaver.py",
       "commands": [
         "leave_cmd"
       ],
@@ -154,7 +154,7 @@
     },
     {
       "id": "stickers",
-      "path": "stickers.py",
+      "path": "modules/stickers.py",
       "commands": [
         "port"
       ],
@@ -173,7 +173,7 @@
     },
     {
       "id": "lastfm",
-      "path": "lastfm.py",
+      "path": "modules/lastfm.py",
       "commands": [
         "lfconfig",
         "np",
@@ -190,7 +190,7 @@
     },
     {
       "id": "astolfo",
-      "path": "astolfo.py",
+      "path": "modules/astolfo.py",
       "commands": [
         "astolfo"
       ],
@@ -204,7 +204,7 @@
     },
     {
       "id": "afk",
-      "path": "afk.py",
+      "path": "modules/afk.py",
       "commands": [
         "afk",
         "unafk"
@@ -218,7 +218,7 @@
     },
     {
       "id": "tiktok",
-      "path": "tiktok.py",
+      "path": "modules/tiktok.py",
       "commands": [
         "tt"
       ],
@@ -232,7 +232,7 @@
     },
     {
       "id": "catgirl",
-      "path": "catgirl.py",
+      "path": "modules/catgirl.py",
       "commands": [
         "catgirl"
       ],
@@ -246,7 +246,7 @@
     },
     {
       "id": "translator",
-      "path": "translator.py",
+      "path": "modules/translator.py",
       "commands": [
         "tr"
       ],

@@ -20,7 +20,7 @@ def extract_module_meta(path: Path):
         if isinstance(node, ast.ClassDef) and node.name == "Meta":
             meta = {
                 "id": path.stem,
-                "path": path.name,
+                "path": f"modules/{path.name}",
                 "commands": []
             }
 
