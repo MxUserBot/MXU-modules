@@ -1,28 +1,47 @@
 from ...core import loader, utils
+from ...core.exceptions import UsageError
 
 
 class Meta:
-    name = "CatGirlModule"
-    _cls_doc = "Отправляет фото кошко девочек"
-    version = "1.0.1"
-    tags = ["api"]
+    name = "CatGirl"
+    _cls_doc = "Strategic deployment of feline-humanoid assets via Nekosia API."
+    version = "2.0.0"
+    tags = ["api", "media"]
 
 
 @loader.tds
 class CatGirlModule(loader.Module):
-    strings = {"error": "Ошибка API"}
+    strings = {
+        "fetching": "🐱 | <b>Locating a tactical catgirl...</b>",
+        "error": "❌ | <b>API failure:</b> <code>{err}</code>",
+        "caption": "✨ | <b>Catgirl ID:</b> <code>{id}</code>"
+    }
 
     @loader.command()
-    async def catgirl(self, mx, event):
-        """Отправляет фото кошко-девочки"""
+    async def catgirl(
+        self,
+        mx,
+        event
+    ):
+        """Summon a random catgirl picture"""
+        await utils.answer(mx, self.strings.get("fetching"))
 
-                
         api_url = "https://api.nekosia.cat/api/v1/images/catgirl"
-        data = await utils.request(api_url, params={"rating": "safe"})
 
+        try:
+            data = await utils.request(api_url)
+            
+            img_url = data["image"]["original"]["url"]
+            img_id = data["id"]
 
-        url = data["image"]["original"]["url"]
-        
+            await utils.send_image(
+                mx, 
+                event, 
+                url=img_url, 
+                caption=self.strings.get("caption").format(id=img_id)
+            )
 
-
-        await utils.send_image(mx, event, url, file_name=f"{data['id']}.jpg")
+        except (TypeError, KeyError, IndexError):
+            raise UsageError()
+        except Exception as e:
+            raise e

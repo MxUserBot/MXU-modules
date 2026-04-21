@@ -1,75 +1,80 @@
 import time
 
+from mautrix.types import EventType, MessageEvent
+
 from ...core import loader, utils
 
 
 class Meta:
     name = "AFK"
-    _cls_doc = "AFK auto-reply for DMs"
-    version = "1.0.0"
-    tags = ["system"]
+    _cls_doc = "AFK MODULE"
+    version = "2.3.0"
+    tags = ["utility"]
 
 
 @loader.tds
 class AFKModule(loader.Module):
-    """AFK module (DM only)"""
-
     strings = {
-        "name": "AFK",
-        "afk_on": "<b>💤 AFK включен</b>\nПричина: <code>{}</code>",
-        "afk_off": "<b>✅ AFK выключен</b>",
-        "afk_reply": "<b>💤 Я сейчас AFK</b>\nПричина: <code>{}</code>",
+        "afk_on": "<b>💤 | AFK Mode Activated</b><br>Reason: <code>{reason}</code>",
+        "afk_off": "<b>✅ | AFK Mode Deactivated</b>",
+        "afk_reply": "<b>💤 | User is currently AFK</b><br>Reason: <code>{reason}</code>",
+        "default_reason": "Gone into the void."
+    }
+
+    config = {
+        "enabled": loader.ConfigValue(False, "AFK status toggle"),
+        "reason": loader.ConfigValue(strings.get("default_reason"), "AFK reason text"),
+        "cooldown": loader.ConfigValue(60, "Auto-reply cooldown in seconds")
     }
 
 
     async def _matrix_start(self, mx):
-        self.afk = False
-        self.reason = "не указана"
-        self.last_reply = {}
+        self._last_reply_times = {}
 
 
     @loader.command()
-    async def afk(self, mx, event):
-        """<reason> - enable AFK"""
+    async def afk(
+        self,
+        _,
+        event,
+        reason: str = None
+    ) -> None:
+        """<reason>"""
 
-        args = event.content.body.split(maxsplit=1)
-        reason = args[1] if len(args) > 1 else "не указана"
+        status = reason or self.strings.get("default_reason")
+        self.config.set("enabled", True)
+        self.config.set("reason", status)
 
-        self.afk = True
-        self.reason = reason
-
-        await utils.answer(mx, self.strings["afk_on"].format(reason))
+        await event.reply(self.strings.get("afk_on").format(reason=status))
 
 
     @loader.command()
     async def unafk(self, mx, event):
-        """Disable AFK"""
+        """unafk"""
+        self.config.set("enabled", False)
+        await event.reply(self.strings.get("afk_off"))
 
-        self.afk = False
-        await utils.answer(mx, self.strings["afk_off"])
 
-
-    async def _matrix_message(self, mx, event):
-        if not self.afk:
+    @loader.on(EventType.ROOM_MESSAGE)
+    async def afk_handler(
+        self,
+        mx,
+        event: MessageEvent
+    ) -> None:
+        if not self.config["enabled"]:
             return
 
         if event.sender == mx.client.mxid:
             return
-
-        room_id = event.room_id
-
-        if not await event.is_dm(mx, room_id):
+        
+        if not await utils.is_dm(mx, event.room_id):
             return
 
-        now = time.time()
-        last = self.last_reply.get(room_id, 0)
-
-        if now - last < 60:
+        last_ts = self._last_reply_times.get(event.room_id, 0)
+        if time.time() - last_ts < self.config["cooldown"]:
             return
-
-        self.last_reply[room_id] = now
-
-        await utils.answer(
-            mx,
-            self.strings.get("afk_reply").format(self.reason), edit_id=None, event=event
+        
+        self._last_reply_times[event.room_id] = time.time()
+        await event.reply(
+            self.strings.get("afk_reply").format(reason=self.config["reason"])
         )

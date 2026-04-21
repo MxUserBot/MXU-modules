@@ -28,35 +28,6 @@
       ]
     },
     {
-      "id": "catgirl",
-      "path": "catgirl.py",
-      "commands": [
-        "catgirl"
-      ],
-      "name": "CatGirlModule",
-      "description": "Отправляет фото кошко девочек",
-      "version": "1.0.1",
-      "tags": [
-        "api"
-      ]
-    },
-    {
-      "id": "lastfm",
-      "path": "lastfm.py",
-      "commands": [
-        "lfconfig",
-        "np",
-        "lfauto",
-        "lfstop"
-      ],
-      "name": "LastFMModule",
-      "description": "Отображение текущей музыки из LastFM с анимацией обложки",
-      "version": "1.2.1",
-      "tags": [
-        "music"
-      ]
-    },
-    {
       "id": "tgbridge",
       "path": "tgbridge.py",
       "commands": [
@@ -74,42 +45,111 @@
       ]
     },
     {
-      "id": "translator",
-      "path": "translator.py",
+      "id": "yt-misic",
+      "path": "yt-misic.py",
       "commands": [
-        "tr"
+        "ytm"
       ],
-      "name": "TranslatorModule",
-      "description": "Позволяет переводить текст из одного языка на другой",
-      "version": "1.0.0",
+      "name": "YTMusic",
+      "description": "YouTube Music Downloader.",
+      "version": "1.2.1",
       "tags": [
-        "translates"
+        "downloader",
+        "media"
       ]
     },
     {
-      "id": "astolfo",
-      "path": "astolfo.py",
+      "id": "quotecard",
+      "path": "quotecard.py",
       "commands": [
-        "astolfo"
+        "qcard"
       ],
-      "name": "AstolfoModule",
-      "description": "Скидывает случайные изображения Астольфо с astolfo.rocks",
-      "version": "1.1",
+      "name": "Quotes",
+      "description": "rendering card-quote style images.",
+      "version": "3.5.1",
       "tags": [
+        "image",
+        "media"
+      ],
+      "dependencies": [
+        "pillow"
+      ]
+    },
+    {
+      "id": "quote",
+      "path": "quote.py",
+      "commands": [
+        "q"
+      ],
+      "name": "Quote",
+      "description": "Element-style quotes",
+      "version": "2.1.0",
+      "tags": [
+        "image",
+        "media"
+      ],
+      "dependencies": [
+        "pillow"
+      ]
+    },
+    {
+      "id": "demotivator",
+      "path": "demotivator.py",
+      "commands": [
+        "demot"
+      ],
+      "name": "Demotivator",
+      "description": "demotivator generator.",
+      "version": "4.1.0",
+      "tags": [
+        "image",
+        "media"
+      ],
+      "dependencies": [
+        "pillow"
+      ]
+    },
+    {
+      "id": "r",
+      "path": "r.py",
+      "commands": [
+        "currency",
+        "convert"
+      ],
+      "name": "Currency",
+      "description": "automated currency conversion",
+      "version": "2.0.0",
+      "tags": [
+        "money",
         "api"
       ]
     },
     {
-      "id": "tiktok",
-      "path": "tiktok.py",
+      "id": "rule34",
+      "path": "rule34.py",
       "commands": [
-        "tt"
+        "rule34"
       ],
-      "name": "TikTokDLModule",
-      "description": "Скачивает TikTok видео и фото-слайды (E2EE ready).",
-      "version": "1.0.0",
+      "name": "Rule34",
+      "description": "API wrapper for Rule34.",
+      "version": "2.0.0",
       "tags": [
+        "18+",
         "api"
+      ]
+    },
+    {
+      "id": "leaver",
+      "path": "leaver.py",
+      "commands": [
+        "leave_cmd"
+      ],
+      "name": "ChatMassacre",
+      "description": "leaver chats",
+      "version": "3.1.0",
+      "tags": [
+        "utility",
+        "admin"
       ]
     },
     {
@@ -118,15 +158,48 @@
       "commands": [
         "port"
       ],
-      "name": "TelegramStickerPortModule",
-      "description": "Импортирует стикеры из телеграмм в матрикс",
-      "version": "1.0.0",
+      "name": "TGStickerPort",
+      "description": "Telegram sticker/emoji migration engine. NOT SUPPORT TGS",
+      "version": "3.6.0-TURBO",
       "tags": [
+        "media",
         "ports"
       ],
       "dependencies": [
         "av",
-        "pillow"
+        "pillow",
+        "aiohttp"
+      ]
+    },
+    {
+      "id": "lastfm",
+      "path": "lastfm.py",
+      "commands": [
+        "lfconfig",
+        "np",
+        "lfauto",
+        "lfstop"
+      ],
+      "name": "LastFM",
+      "description": "Last.fm synchronization for Matrix RPC.",
+      "version": "3.0.0",
+      "tags": [
+        "music",
+        "rpc"
+      ]
+    },
+    {
+      "id": "astolfo",
+      "path": "astolfo.py",
+      "commands": [
+        "astolfo"
+      ],
+      "name": "Astolfo",
+      "description": "Astolfo pic from astolfo.rocks.",
+      "version": "2.0.0",
+      "tags": [
+        "api",
+        "media"
       ]
     },
     {
@@ -137,10 +210,51 @@
         "unafk"
       ],
       "name": "AFK",
-      "description": "AFK auto-reply for DMs",
-      "version": "1.0.0",
+      "description": "AFK MODULE",
+      "version": "2.3.0",
       "tags": [
-        "system"
+        "utility"
+      ]
+    },
+    {
+      "id": "tiktok",
+      "path": "tiktok.py",
+      "commands": [
+        "tt"
+      ],
+      "name": "TikTokDL",
+      "description": " TikTok downloader",
+      "version": "3.2.1",
+      "tags": [
+        "media",
+        "api"
+      ]
+    },
+    {
+      "id": "catgirl",
+      "path": "catgirl.py",
+      "commands": [
+        "catgirl"
+      ],
+      "name": "CatGirl",
+      "description": "Strategic deployment of feline-humanoid assets via Nekosia API.",
+      "version": "2.0.0",
+      "tags": [
+        "api",
+        "media"
+      ]
+    },
+    {
+      "id": "translator",
+      "path": "translator.py",
+      "commands": [
+        "tr"
+      ],
+      "name": "Translator",
+      "description": "google translator",
+      "version": "2.0.0",
+      "tags": [
+        "utility"
       ]
     }
   ]

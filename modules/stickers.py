@@ -1,159 +1,228 @@
-import aiohttp
-import asyncio
+import io
 import re
 import uuid
-import io
+import asyncio
+import aiohttp
+import av
 from PIL import Image
-from typing import Any
+from typing import Any, Dict, List, Tuple, Optional
+
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent
 
-import av
 from ...core import loader, utils
+from ...core.exceptions import UsageError
 
 
 class Meta:
-    name = "TelegramStickerPortModule"
-    _cls_doc = "Импортирует стикеры из телеграмм в матрикс"
-    version = "1.0.0"
-    tags = ["ports"]
-    dependencies = ["av", "pillow"]
+    name = "TGStickerPort"
+    _cls_doc = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
+    version = "3.6.0-TURBO"
+    tags = ["media", "ports"]
+    dependencies = ["av", "pillow", "aiohttp"]
 
-@loader.tds
-class TelegramStickerPortModule(loader.Module):
-    strings = {
-        "start": "<b>[StickerPort]</b> Начинаю импорт... Обработка видео может занять время.",
-        "done": "<b>[StickerPort]</b> Готово! Импортировано {count} стикеров.",
-        "error": "<b>[StickerPort]</b> Ошибка при импорте.",
-        "bad_url": "<b>[StickerPort]</b> Неверная ссылка.",
-    }
 
-    BOT_TOKEN = "8662794033:AAEqJGRTP9Z_BctcSd5QIupqXoKl07ul360"
+class TGPackPayload(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    pack_name: str = Field(min_length=1)
 
-    async def _convert_video_to_webp(self, video_bytes: bytes) -> bytes:
-        try:
-            return await asyncio.to_thread(self._sync_convert, video_bytes)
-        except Exception as e:
-            self.logger.error(f"Conversion error: {e}")
-            return video_bytes
+    @model_validator(mode='before')
+    @classmethod
+    def validate_link(cls, v: Any):
+        if isinstance(v, str):
+            match = re.search(r"t\.me/(?:addstickers|addemoji)/([A-Za-z0-9_]+)", v, re.IGNORECASE)
+            if not match:
+                raise ValueError("Invalid link")
+            return {"pack_name": match.group(1)}
+        return v
 
-    def _sync_convert(self, video_bytes: bytes) -> bytes:
-        input_file = io.BytesIO(video_bytes)
-        container = av.open(input_file)
-        
-        frames = []
-        max_frames = 30
-        
-        for frame in container.decode(video=0):
-            img = frame.to_image().convert("RGBA")
-            img.thumbnail((512, 512))
-            frames.append(img)
-            if len(frames) >= max_frames:
-                break
-        
-        container.close()
 
-        if not frames:
-            return video_bytes
+class StickerItem(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    body: str
+    mxc_url: str
+    width: int
+    height: int
+    size: int
+    shortcode: str
 
-        output_buffer = io.BytesIO()
-        frames[0].save(
-            output_buffer,
-            format="WEBP",
-            save_all=True,
-            append_images=frames[1:],
-            duration=40,
-            loop=0,
-            quality=50,
-            lossless=False
-        )
-        return output_buffer.getvalue()
 
-    @loader.command()
-    async def port(self, mx: Any, event: MessageEvent):
-        """1"""
-        body = getattr(event.content, "body", "")
-        if not body:
-            return
+class TGStickerEngine:
+    SEMAPHORE = asyncio.Semaphore(2) 
 
-        match = re.search(r"t\.me/addstickers/([A-Za-z0-9_]+)", body)
-        if not match:
-            await utils.answer(mx, self.strings.get("bad_url"))
-            return
+    @staticmethod
+    def _convert_to_webp(file_bytes: bytes, is_video: bool = False) -> bytes:
+        if is_video:
+            out = io.BytesIO()
+            frames = []
+            try:
+                container = av.open(io.BytesIO(file_bytes))
+                for frame in container.decode(video=0):
+                    img = frame.to_image().convert("RGBA")
+                    frames.append(img)
+                    if len(frames) >= 45:
+                        break
+                container.close()
+            except Exception as e:
+                raise RuntimeError(f"AV decoding failed: {e}")
 
-        pack_name = match.group(1)
-        await utils.answer(mx, self.strings.get("start"))
+            if not frames:
+                raise ValueError("No video frames")
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                tg_url = f"https://api.telegram.org/bot{self.BOT_TOKEN}/getStickerSet?name={pack_name}"
-                async with session.get(tg_url) as r:
-                    data = await r.json()
+            frames[0].save(
+                out,
+                format="WEBP",
+                save_all=True,
+                append_images=frames[1:],
+                duration=40,
+                loop=0,
+                quality=75,
+                method=4 
+            )
+            return out.getvalue()
+        else:
+            try:
+                img = Image.open(io.BytesIO(file_bytes)).convert("RGBA")
+                out = io.BytesIO()
+                img.save(out, format="WEBP", lossless=True, method=4)
+                return out.getvalue()
+            except Exception as e:
+                raise RuntimeError(f"Static conversion failed: {e}")
 
-                if not data.get("ok"):
-                    await utils.answer(mx, self.strings.get("error"))
-                    return
+    @classmethod
+    async def _process_single_sticker(
+        cls, mx, session, token, sticker, pack_name, i, logger
+    ) -> Optional[StickerItem]:
+        async with cls.SEMAPHORE:
+            try:
+                file_id = sticker["file_id"]
+                is_video = sticker.get("is_video", False)
+                is_animated = sticker.get("is_animated", False)
 
-                result = data["result"]
-                stickers = result["stickers"]
-                title = result["title"]
-                is_video = result.get("is_video", False)
+                if is_animated and not is_video:
+                    if "thumbnail" in sticker:
+                        file_id = sticker["thumbnail"]["file_id"]
+                        is_video = False
+                    else:
+                        return None
 
-                images = {}
-                pack_id = f"tg_{pack_name.lower()}_{uuid.uuid4().hex[:6]}"
-                
-                for i, sticker in enumerate(stickers, 1):
-                    file_id = sticker["file_id"]
-                    
-                    async with session.get(f"https://api.telegram.org/bot{self.BOT_TOKEN}/getFile?file_id={file_id}") as r:
-                        f_data = await r.json()
-                    
+                async with session.get(f"https://api.telegram.org/bot{token}/getFile?file_id={file_id}") as f_res:
+                    f_data = await f_res.json()
+                    if not f_data.get("ok"): return None
                     file_path = f_data["result"]["file_path"]
-                    
-                    async with session.get(f"https://api.telegram.org/file/bot{self.BOT_TOKEN}/{file_path}") as r:
-                        file_bytes = await r.read()
 
-                    if is_video or file_path.endswith(".webm"):
-                        file_bytes = await self._convert_video_to_webp(file_bytes)
-                    
-                    mxc_url = await mx.client.upload_media(
-                        data=file_bytes, 
-                        mime_type="image/webp", 
-                        filename=f"{pack_name}_{i}.webp"
-                    )
-                    
-                    with Image.open(io.BytesIO(file_bytes)) as img:
-                        width, height = img.size
+                async with session.get(f"https://api.telegram.org/file/bot{token}/{file_path}") as d_res:
+                    raw_bytes = await d_res.read()
 
-                    if mxc_url:
-                        shortcode = f"tg_{i}"
-                        images[shortcode] = {
-                            "body": sticker.get("emoji", shortcode),
-                            "url": mxc_url,
-                            "info": {
-                                "mimetype": "image/webp",
-                                "w": width,
-                                "h": height,
-                                "size": len(file_bytes)
-                            },
-                            "usage": ["sticker"]
-                        }
+                processed_bytes = await asyncio.to_thread(cls._convert_to_webp, raw_bytes, is_video)
 
-                content = {
-                    "pack": {
-                        "display_name": f"TG: {title}",
-                        "usage": ["sticker"],
-                        "avatar_url": list(images.values())[0]["url"] if images else ""
-                    },
-                    "images": images
-                }
-
-                await mx.client.send_state_event(
-                    room_id=event.room_id,
-                    event_type="im.ponies.room_emotes",
-                    content=content,
-                    state_key=pack_id
+                mxc_url = await mx.client.upload_media(
+                    data=processed_bytes,
+                    mime_type="image/webp",
+                    filename=f"s_{uuid.uuid4().hex[:8]}.webp",
                 )
 
-                await utils.answer(mx, self.strings.get("done").format(count=len(images)))
-        except Exception:
-            await utils.answer(mx, self.strings.get("error"))
+                return StickerItem(
+                    body=sticker.get("emoji", "✨"),
+                    mxc_url=mxc_url,
+                    width=sticker.get("width", 512),
+                    height=sticker.get("height", 512),
+                    size=len(processed_bytes),
+                    shortcode=sticker.get("custom_emoji_id") or f"tg_{pack_name}_{i}",
+                )
+            except Exception as e:
+                logger.error(f"Failed to process sticker {i}: {e}")
+                return None
+
+    @classmethod
+    async def process_pack(
+        cls, mx, token: str, pack_name: str, strings: Dict[str, str], logger: Any
+    ) -> Tuple[str, List[StickerItem]]:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.telegram.org/bot{token}/getStickerSet?name={pack_name}") as res:
+                data = await res.json()
+                if not data.get("ok"):
+                    raise ValueError(strings["api_err"].format(err=data.get("description", "Unknown")))
+
+            pack_data = data["result"]
+            
+            tasks = [
+                cls._process_single_sticker(mx, session, token, s, pack_name, i, logger)
+                for i, s in enumerate(pack_data["stickers"], 1)
+            ]
+            
+            results = await asyncio.gather(*tasks)
+            processed_items = [r for r in results if r is not None]
+
+            if not processed_items:
+                raise ValueError(strings["empty_pack"])
+
+            return pack_data["title"], processed_items
+
+
+@loader.tds
+class TGStickerPortModule(loader.Module):
+    strings = {
+        "start": "🚀 <b>Turbo-import initiated... Parallel processing engaged!</b>",
+        "done": "✅ <b>Successfully imported {count} items!</b>",
+        "error": "❌ <b>Import failed:</b> <code>{err}</code>",
+        "bad_url": "❌ <b>Invalid URL:</b> Use t.me/addstickers/... or t.me/addemoji/...",
+        "api_err": "❌ <b>Telegram API Error:</b> <code>{err}</code>",
+        "empty_pack": "❌ <b>Processing Error:</b> No supported media assets found.",
+    }
+
+    config = {
+        "tg_token": loader.ConfigValue(
+            default="",
+            description="Telegram Bot Token from t.me/BotFather",
+            required=True,
+        )
+    }
+
+    @loader.command()
+    async def port(self, mx, event: MessageEvent, link: TGPackPayload):
+        """<link> - Port Telegram stickers/emojis at warp speed"""
+        if not self.config["tg_token"]:
+            raise UsageError("Configuration required: tg_token is empty.")
+
+        status_id = await utils.answer(mx, self.strings["start"])
+
+        try:
+            title, items = await TGStickerEngine.process_pack(
+                mx, self.config["tg_token"], link.pack_name, self.strings, self.logger
+            )
+
+            images_content = {
+                item.shortcode: {
+                    "body": item.body,
+                    "url": item.mxc_url,
+                    "info": {
+                        "mimetype": "image/webp",
+                        "w": item.width,
+                        "h": item.height,
+                        "size": item.size,
+                    },
+                    "usage": ["sticker", "emoticon"],
+                } for item in items
+            }
+
+            pack_id = f"tg_{link.pack_name.lower()}_{uuid.uuid4().hex[:6]}"
+            await mx.client.send_state_event(
+                room_id=event.room_id,
+                event_type="im.ponies.room_emotes",
+                content={
+                    "pack": {
+                        "display_name": f"TG: {title}",
+                        "usage": ["sticker", "emoticon"],
+                        "avatar_url": items[0].mxc_url,
+                    },
+                    "images": images_content,
+                },
+                state_key=pack_id,
+            )
+
+            await utils.answer(mx, self.strings["done"].format(count=len(items)), edit_id=status_id)
+
+        except Exception as e:
+            self.logger.exception("Turbo-port failure")
+            await utils.answer(mx, self.strings["error"].format(err=str(e)), edit_id=status_id)

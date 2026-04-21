@@ -1,153 +1,136 @@
-import aiohttp
-import os
 import re
-import shutil
+import uuid
 import asyncio
-from dataclasses import dataclass
-from typing import List, Optional
-import subprocess
+from typing import Any, Dict
 
-from mautrix.types import (
-    MessageEvent, EventType, MessageType, 
-    MediaMessageEventContent, ImageInfo, VideoInfo
-)
-from mautrix.crypto.attachments import encrypt_attachment
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+from mautrix.types import MessageEvent, MessageType, MediaMessageEventContent, VideoInfo
+
 from ...core import loader, utils
 
 
 class Meta:
-    name = "TikTokDLModule"
-    _cls_doc = "Скачивает TikTok видео и фото-слайды (E2EE ready)."
-    version = "1.0.0"
-    tags = ["api"]
+    name = "TikTokDL"
+    _cls_doc = " TikTok downloader"
+    version = "3.2.1"
+    tags = ["media", "api"]
 
-@dataclass
-class TTData:
-    media: List[str]
-    type: str  # "video" или "images"
 
-class TikTokAPI:
-    def __init__(self, host: Optional[str] = None):
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/91.0.4472.124 Safari/537.36"
-        }
-        self.host = host or "https://www.tikwm.com/"
-        self.session = aiohttp.ClientSession(headers=self.headers)
+class TikTokPayload(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    url: str = Field(min_length=1)
 
-    async def close(self):
-        await self.session.close()
+    @model_validator(mode='before')
+    @classmethod
+    def extract_url(cls, v: Any):
+        if isinstance(v, str):
+            match = re.search(r"https?://(?:www\.|vm\.|vt\.)?tiktok\.com/[^\s]+", v)
+            if not match:
+                raise ValueError("No valid TikTok link detected")
+            return {"url": match.group(0)}
+        return v
 
-    async def _download_file(self, url: str, path: str):
-        async with self.session.get(url) as response:
-            response.raise_for_status()
-            with open(path, "wb") as f:
-                f.write(await response.read())
 
-    async def download(self, link: str, hd: bool = True) -> TTData:
-        async with self.session.get(f"{self.host}api", params={"url": link, "hd": int(hd)}) as response:
-            data = await response.json()
-            if not data.get("data"):
-                raise Exception(data.get("msg") or "No data found")
-
-            result = data["data"]
-            if "images" in result:
-                os.makedirs("tt_temp", exist_ok=True)
-                paths = []
-                for i, url in enumerate(result["images"]):
-                    path = f"tt_temp/img_{i}.jpg"
-                    await self._download_file(url, path)
-                    paths.append(path)
-                return TTData(paths, "images")
+class TikTokEngine:
+    @staticmethod
+    async def fetch_video_data(url: str, strings: Dict[str, str]) -> str:
+        api_url = f"https://www.tikwm.com/api?url={url}"
+        try:
+            res = await utils.request(api_url)
+            if not res or "data" not in res:
+                raise ValueError(strings["api_error"].format(err="Empty response"))
             
-            elif "play" in result:
-                url = result.get("play") or result.get("hdplay")
-                path = f"tt_temp_{result['id']}.mp4"
-                await self._download_file(url, path)
-                return TTData([path], "video")
+            play_url = res["data"].get("play")
+            if not play_url:
+                raise ValueError(strings["api_error"].format(err="Missing play URL"))
             
-            raise Exception("Unknown content type")
+            return play_url
+        except Exception as e:
+            raise RuntimeError(strings["api_error"].format(err=str(e)))
 
-def convert_to_mp4(input_path: str) -> str:
-    """Конвертирует bvc2 или неподдерживаемый TikTok формат в mp4, возвращает путь нового файла"""
-    output_path = input_path.replace(".mp4", "_conv.mp4")
-    subprocess.run([
-        "ffmpeg", "-y", "-i", input_path,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "128k",
-        output_path
-    ], check=True)
-    os.remove(input_path)
-    return output_path
+
+    @staticmethod
+    async def transcode_video(raw_bytes: bytes, strings: Dict[str, str]) -> bytes:
+        job_id = uuid.uuid4().hex[:8]
+        in_file = f"tt_raw_{job_id}.mp4"
+        out_file = f"tt_final_{job_id}.mp4"
+
+        in_path = await utils.safe_save(raw_bytes, in_file)
+        out_path = str(utils._get_safe_path(out_file))
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "ffmpeg",
+                "-i", in_path,
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
+                "-c:a", "aac", "-b:a", "128k", "-y", out_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await process.communicate()
+
+            if process.returncode != 0:
+                err_log = stderr.decode()
+                raise RuntimeError(f"FFmpeg error {process.returncode}: {err_log[:150]}")
+
+            def read_result():
+                with open(out_path, "rb") as f:
+                    return f.read()
+            
+            return await asyncio.to_thread(read_result)
+
+        except Exception as e:
+            raise RuntimeError(strings["error"].format(err=f"Pipeline failure: {e}"))
+        finally:
+            await utils.safe_remove(in_file)
+            await utils.safe_remove(out_file)
+
 
 @loader.tds
-class MatrixModule(loader.Module):
+class TikTokDLModule(loader.Module):
     strings = {
-
-        "no_url": "❌ <b><u>TikTok URL не найден.</u></b>",
-        "downloading": "⏳ Скачивание и обработка медиа...",
-        "error": "❌ Ошибка: {err}"
+        "downloading": "⏳ |<b>Acquiring TikTok asset...</b>",
+        "processing": "⚙️ | <b>Transcoding sequence (Safe Storage)...</b>",
+        "uploading": "📤 | <b>Dispatching to Matrix infrastructure...</b>",
+        "api_error": "❌ | <b>API Protocol Breach:</b> <code>{err}</code>",
+        "error": "❌ | <b>Operational Failure:</b> <code>{err}</code>"
     }
 
     @loader.command()
-    async def tt(self, mx, event: MessageEvent):
-        """Скачивает TikTok видео или фото-слайды (E2EE Ready)"""
-        text = getattr(event.content, "body", "") or ""
-        matches = re.findall(r"https?://(?:www\.|vm\.|vt\.)?tiktok\.com/[^\s]+", text)
-        url = matches[0] if matches else None
+    async def tt(self, mx, event: MessageEvent, link: TikTokPayload):
+        """<link> | Download TikTok video through enterprise safe-storage pipeline"""
+        url = link.url
+        status_id = await utils.answer(mx, self.strings["downloading"])
 
-        if not url:
-            return await utils.answer(mx, self.strings.get("no_url"))
-
-        progress = await utils.answer(mx, self.strings.get("downloading"))
-        
-        api = TikTokAPI()
         try:
-            result = await api.download(url)
+            video_url = await TikTokEngine.fetch_video_data(url, self.strings)
 
-            for file_path in result.media:
-                if result.type == "video":
-                    file_path = convert_to_mp4(file_path)
+            video_bytes = await utils.request(video_url, return_type="bytes")
+            if not video_bytes:
+                raise ValueError("Received null payload from source.")
 
-                with open(file_path, "rb") as f:
-                    file_bytes = f.read()
+            await utils.answer(mx, self.strings["processing"], edit_id=status_id)
+            final_video = await TikTokEngine.transcode_video(video_bytes, self.strings)
 
-                filename = os.path.basename(file_path)
-                if result.type == "video":
-                    mime = "video/mp4"
-                    msg_type = MessageType.VIDEO
-                    info = VideoInfo(mimetype=mime, size=len(file_bytes))
-                else:
-                    mime = "image/jpeg"
-                    msg_type = MessageType.IMAGE
-                    info = ImageInfo(mimetype=mime, size=len(file_bytes))
-
-                mxc = await mx.client.upload_media(file_bytes, mime_type=mime, filename=filename)
-                content = MediaMessageEventContent(
-                    msgtype=msg_type,
-                    body=filename,
-                    info=info,
-                    url=mxc
+            await utils.answer(mx, self.strings["uploading"], edit_id=status_id)
+            mxc = await mx.client.upload_media(final_video, mime_type="video/mp4")
+            
+            content = MediaMessageEventContent(
+                msgtype=MessageType.VIDEO,
+                url=mxc,
+                body=f"tiktok_{uuid.uuid4().hex[:4]}.mp4",
+                info=VideoInfo(
+                    mimetype="video/mp4", 
+                    size=len(final_video)
                 )
-
-                await mx.client.send_message_event(
-                    room_id=event.room_id,
-                    event_type=EventType.ROOM_MESSAGE,
-                    content=content
-                )
-
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            )
+            
+            await mx.client.send_message(event.room_id, content)
+            
+            await mx.client.redact(event.room_id, status_id)
+            if status_id != event.event_id:
+                await mx.client.redact(event.room_id, event.event_id)
 
         except Exception as e:
-            await utils.answer(mx, self.strings.get("error").format(err=str(e)))
-        
-        finally:
-            await api.close()
-            try:
-                await mx.client.redact(event.room_id, progress, reason="TkTok Module")
-                if os.path.exists("tt_temp"):
-                    shutil.rmtree("tt_temp")
-            except:
-                pass
+            raise e
