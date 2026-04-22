@@ -13,6 +13,7 @@ class Meta:
     _cls_doc = "API wrapper for Rule34."
     version = "2.0.0"
     tags = ["18+", "api"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class Rule34Config(BaseModel):

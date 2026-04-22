@@ -20,6 +20,7 @@ class Meta:
     version = "3.6.0-TURBO"
     tags = ["media", "ports"]
     dependencies = ["av", "pillow", "aiohttp"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class TGPackPayload(BaseModel):

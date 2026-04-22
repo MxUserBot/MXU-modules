@@ -15,6 +15,7 @@ class Meta:
     version = "3.5.1"
     tags = ["image", "media"]
     dependencies = ["pillow"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 @loader.tds

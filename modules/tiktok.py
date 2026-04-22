@@ -14,6 +14,7 @@ class Meta:
     _cls_doc = " TikTok downloader"
     version = "3.2.1"
     tags = ["media", "api"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class TikTokPayload(BaseModel):

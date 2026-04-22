@@ -7,6 +7,7 @@ class Meta:
     _cls_doc = "google translator"
     version = "2.0.0"
     tags = ["utility"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 @loader.tds

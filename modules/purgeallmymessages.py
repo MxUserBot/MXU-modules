@@ -8,6 +8,7 @@ class Meta:
     _cls_doc = "Позволяет удялять всё сообщения в комнате"
     version = "1.0.0"
     tags = ["messages"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 @loader.tds

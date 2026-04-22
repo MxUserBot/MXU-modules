@@ -17,6 +17,7 @@ class Meta:
     version = "2.1.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class QuoteData(BaseModel):

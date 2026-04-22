@@ -6,6 +6,7 @@ class Meta:
     name = "CatGirl"
     _cls_doc = "Strategic deployment of feline-humanoid assets via Nekosia API."
     version = "2.0.0"
+    author = "@pasha:pashahatsune.pp.ua"
     tags = ["api", "media"]
 
 

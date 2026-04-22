@@ -9,6 +9,7 @@ class Meta:
     _cls_doc = "Кастомные приветствия для каждого чата"
     version = "1.0.0"
     tags = ["helpers"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 @loader.tds
 class WelcomeModule(loader.Module):

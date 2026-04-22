@@ -22,7 +22,7 @@ class AFKModule(loader.Module):
     }
 
     config = {
-        "enabled": loader.ConfigValue(False, "AFK status toggle"),
+        "enabled": loader.ConfigValue(False, "AFK status toggle", forbid=True),
         "reason": loader.ConfigValue(strings.get("default_reason"), "AFK reason text"),
         "cooldown": loader.ConfigValue(60, "Auto-reply cooldown in seconds")
     }

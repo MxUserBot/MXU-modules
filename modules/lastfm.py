@@ -12,6 +12,7 @@ class Meta:
     _cls_doc = "Last.fm synchronization for Matrix RPC."
     version = "3.0.0"
     tags = ["music", "rpc"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class SongData(BaseModel):
@@ -161,7 +162,7 @@ class LastFMModule(loader.Module):
                 else:
                     if self._last_track_id is not None:
                         self._last_track_id = None
-                        await utils.set_rpc_activity(mx, name="Idle", details="Nothing playing")
+                        await utils.clear_rpc(mx)
 
             except asyncio.CancelledError:
                 break

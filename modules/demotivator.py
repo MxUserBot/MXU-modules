@@ -17,6 +17,7 @@ class Meta:
     version = "4.1.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 class DemotPayload(BaseModel):

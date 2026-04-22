@@ -11,6 +11,7 @@ class Meta:
     _cls_doc = "leaver chats"
     version = "3.1.0"
     tags = ["utility", "admin"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 @loader.tds

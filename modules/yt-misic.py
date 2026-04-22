@@ -13,6 +13,7 @@ class Meta:
     _cls_doc = "YouTube Music Downloader."
     version = "1.2.1"
     tags = ["downloader", "media"]
+    author = "@pasha:pashahatsune.pp.ua"
 
 
 @loader.tds
