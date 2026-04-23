@@ -77,4 +77,4 @@ if __name__ == "__main__":
     try:
         generate_index()
     except Exception as e:
-        log.critical(f"💥 СКРИПТ ОБОСРАЛСЯ: {e}")
+        raise e
