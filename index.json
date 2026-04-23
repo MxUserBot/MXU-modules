@@ -7,7 +7,6 @@
       "utility"
     ],
     "name": "AFK",
-    "description": "AFK MODULE",
     "version": "2.3.0"
   },
   "astolfo": {
@@ -19,7 +18,6 @@
       "media"
     ],
     "name": "Astolfo",
-    "description": "Astolfo pic from astolfo.rocks.",
     "version": "2.0.0"
   },
   "catgirl": {
@@ -31,7 +29,6 @@
       "media"
     ],
     "name": "CatGirl",
-    "description": "Strategic deployment of feline-humanoid assets via Nekosia API.",
     "version": "2.0.0"
   },
   "demotivator": {
@@ -45,7 +42,6 @@
       "media"
     ],
     "name": "Demotivator",
-    "description": "demotivator generator.",
     "version": "4.1.0"
   },
   "lastfm": {
@@ -57,7 +53,6 @@
       "rpc"
     ],
     "name": "LastFM",
-    "description": "Last.fm synchronization for Matrix RPC.",
     "version": "3.0.0"
   },
   "leaver": {
@@ -69,7 +64,6 @@
       "admin"
     ],
     "name": "ChatMassacre",
-    "description": "leaver chats",
     "version": "3.1.0"
   },
   "purgeallmymessages": {
@@ -80,7 +74,6 @@
       "messages"
     ],
     "name": "PurgeAllMessagesModule",
-    "description": "Позволяет удялять всё сообщения в комнате",
     "version": "1.0.0"
   },
   "quote": {
@@ -94,7 +87,6 @@
       "media"
     ],
     "name": "Quote",
-    "description": "Element-style quotes",
     "version": "2.1.0"
   },
   "quotecard": {
@@ -108,7 +100,6 @@
       "media"
     ],
     "name": "Quotes",
-    "description": "rendering card-quote style images.",
     "version": "3.5.1"
   },
   "r": {
@@ -120,7 +111,6 @@
       "api"
     ],
     "name": "Currency",
-    "description": "automated currency conversion",
     "version": "2.0.0"
   },
   "rule34": {
@@ -132,7 +122,6 @@
       "api"
     ],
     "name": "Rule34",
-    "description": "API wrapper for Rule34.",
     "version": "2.0.0"
   },
   "stickers": {
@@ -148,7 +137,6 @@
       "ports"
     ],
     "name": "TGStickerPort",
-    "description": "Telegram sticker/emoji migration engine. NOT SUPPORT TGS",
     "version": "3.6.0-TURBO"
   },
   "tiktok": {
@@ -160,7 +148,6 @@
       "api"
     ],
     "name": "TikTokDL",
-    "description": " TikTok downloader",
     "version": "3.2.1"
   },
   "translator": {
@@ -171,7 +158,6 @@
       "utility"
     ],
     "name": "Translator",
-    "description": "google translator",
     "version": "2.0.0"
   },
   "welcome": {
@@ -182,7 +168,6 @@
       "helpers"
     ],
     "name": "HelperModule",
-    "description": "Кастомные приветствия для каждого чата",
     "version": "1.0.0"
   },
   "yt-misic": {
@@ -194,7 +179,6 @@
       "media"
     ],
     "name": "YTMusic",
-    "description": "YouTube Music Downloader.",
     "version": "1.2.1"
   }
 }
