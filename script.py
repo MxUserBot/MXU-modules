@@ -2,7 +2,7 @@ import ast
 import json
 from pathlib import Path
 
-BASE_URL = "https://raw.githubusercontent.com/PashaHatsune/MxUserbot/main/modules"
+BASE_URL = "https://raw.githubusercontent.com/PashaHatsune/MxUserbot/mx-modules/main/modules"
 
 
 def extract_value(node):
