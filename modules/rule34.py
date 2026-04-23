@@ -10,7 +10,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "Rule34"
-    _cls_doc = "API wrapper for Rule34."
+    description = "API wrapper for Rule34."
     version = "2.0.0"
     tags = ["18+", "api"]
     author = "@pasha:pashahatsune.pp.ua"

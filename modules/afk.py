@@ -7,7 +7,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "AFK"
-    _cls_doc = "AFK MODULE"
+    description = "AFK MODULE"
     version = "2.3.0"
     tags = ["utility"]
 

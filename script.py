@@ -29,7 +29,6 @@ def generate_index():
             source = file.read_text("utf-8")
             tree = ast.parse(source)
         except (SyntaxError, UnicodeDecodeError):
-            log.warning(f"⚠️ | Skipped: {file.name} (Это не код, это мусор!)")
             continue
 
         meta_info = None

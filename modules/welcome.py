@@ -6,10 +6,11 @@ from ...core import loader, utils
 
 class Meta:
     name = "HelperModule"
-    _cls_doc = "Кастомные приветствия для каждого чата"
+    description = "Кастомные приветствия для каждого чата"
     version = "1.0.0"
     tags = ["helpers"]
     author = "@pasha:pashahatsune.pp.ua"
+
 
 @loader.tds
 class WelcomeModule(loader.Module):

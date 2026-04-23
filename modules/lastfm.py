@@ -9,7 +9,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "LastFM"
-    _cls_doc = "Last.fm synchronization for Matrix RPC."
+    description = "Last.fm synchronization for Matrix RPC."
     version = "3.0.0"
     tags = ["music", "rpc"]
     author = "@pasha:pashahatsune.pp.ua"

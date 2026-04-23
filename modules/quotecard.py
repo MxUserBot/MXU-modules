@@ -11,7 +11,7 @@ from ...core.exceptions import UsageError
 
 class Meta:
     name = "Quotes"
-    _cls_doc = "rendering card-quote style images."
+    description = "rendering card-quote style images."
     version = "3.5.1"
     tags = ["image", "media"]
     dependencies = ["pillow"]

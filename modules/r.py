@@ -11,7 +11,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "Currency"
-    _cls_doc = "automated currency conversion"
+    description = "automated currency conversion"
     version = "2.0.0"
     tags = ["money", "api"]
     author = "@pasha:pashahatsune.pp.ua"

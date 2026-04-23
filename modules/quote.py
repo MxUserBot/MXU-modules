@@ -13,7 +13,7 @@ from ...core.exceptions import UsageError
 
 class Meta:
     name = "Quote"
-    _cls_doc = "Element-style quotes"
+    description = "Element-style quotes"
     version = "2.1.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]
@@ -132,7 +132,7 @@ class QuoteModule(loader.Module):
 
     @loader.command()
     async def q(self, mx, event: MessageEvent):
-        """(reply) - Create an enterprise Element-style quote"""
+        """[reply] - Create Element-style quote"""
         if not self._fonts.get("regular") or not self._fonts.get("bold"):
             raise UsageError(self.strings["font_err"])
 

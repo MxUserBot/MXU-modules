@@ -11,7 +11,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "TikTokDL"
-    _cls_doc = " TikTok downloader"
+    description = " TikTok downloader"
     version = "3.2.1"
     tags = ["media", "api"]
     author = "@pasha:pashahatsune.pp.ua"
@@ -100,7 +100,7 @@ class TikTokDLModule(loader.Module):
 
     @loader.command()
     async def tt(self, mx, event: MessageEvent, link: TikTokPayload):
-        """<link> | Download TikTok video through enterprise safe-storage pipeline"""
+        """<link> - Download TikTok video"""
         url = link.url
         status_id = await utils.answer(mx, self.strings["downloading"])
 

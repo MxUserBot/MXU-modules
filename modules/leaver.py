@@ -8,7 +8,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "ChatMassacre"
-    _cls_doc = "leaver chats"
+    description = "leaver chats"
     version = "3.1.0"
     tags = ["utility", "admin"]
     author = "@pasha:pashahatsune.pp.ua"
@@ -74,7 +74,7 @@ class ChatMassacreModule(loader.Module):
     ):
         """<u/n/id> <target> - Mass leave rooms by User, Name, or IDs"""
         
-        await utils.answer(mx, self.strings.get("starting").format(mode=mode, target=target))
+        g = await utils.answer(mx, self.strings.get("starting").format(mode=mode, target=target))
         
         log_room = await mx._bot._db.get("core", "log_room_id")
         joined_rooms = await mx.client.get_joined_rooms()
@@ -99,4 +99,4 @@ class ChatMassacreModule(loader.Module):
             except Exception as e:
                 raise e
 
-        await utils.answer(mx, self.strings.get("finished").format(count=count))
+        await utils.answer(mx, self.strings.get("finished").format(count=count), edit_id=g)

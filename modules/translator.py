@@ -4,7 +4,7 @@ from ...core import loader
 
 class Meta:
     name = "Translator"
-    _cls_doc = "google translator"
+    description = "google translator"
     version = "2.0.0"
     tags = ["utility"]
     author = "@pasha:pashahatsune.pp.ua"

@@ -10,7 +10,7 @@ from ...core import loader, utils
 
 class Meta:
     name = "YTMusic"
-    _cls_doc = "YouTube Music Downloader."
+    description = "YouTube Music Downloader."
     version = "1.2.1"
     tags = ["downloader", "media"]
     author = "@pasha:pashahatsune.pp.ua"

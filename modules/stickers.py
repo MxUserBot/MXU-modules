@@ -16,11 +16,10 @@ from ...core.exceptions import UsageError
 
 class Meta:
     name = "TGStickerPort"
-    _cls_doc = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
+    description = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
     version = "3.6.0-TURBO"
     tags = ["media", "ports"]
     dependencies = ["av", "pillow", "aiohttp"]
-    author = "@pasha:pashahatsune.pp.ua"
 
 
 class TGPackPayload(BaseModel):

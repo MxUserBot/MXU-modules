@@ -13,7 +13,7 @@ from ...core.exceptions import UsageError
 
 class Meta:
     name = "Demotivator"
-    _cls_doc = "demotivator generator."
+    description = "demotivator generator."
     version = "4.1.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]

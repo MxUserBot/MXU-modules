@@ -1,9 +1,10 @@
 from ...core import loader, utils
 from ...core.exceptions import UsageError
 
+
 class Meta:
     name = "Astolfo"
-    _cls_doc = "Astolfo pic from astolfo.rocks."
+    description = "Astolfo pic from astolfo.rocks."
     version = "2.0.0"
     tags = ["api", "media"]
 
