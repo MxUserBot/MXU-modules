@@ -1,6 +1,6 @@
 {
   "afk": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/afk.py",
+    "url": "https://raw.githubusercontent.com/MxserBot/mx-modules/main/modules/afk.py",
     "author": "Unknown",
     "dependencies": [],
     "tags": [
