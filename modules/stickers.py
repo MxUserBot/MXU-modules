@@ -2,24 +2,22 @@ import io
 import re
 import uuid
 import asyncio
-import aiohttp
-import av
-from PIL import Image
 from typing import Any, Dict, List, Tuple, Optional
 
+import av
+from PIL import Image
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent
 
 from ...core import loader, utils
-from ...core.exceptions import UsageError
 
 
 class Meta:
     name = "TGStickerPort"
     description = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
     version = "3.6.0-TURBO"
-    tags = ["media", "ports"]
-    dependencies = ["av", "pillow", "aiohttp"]
+    tags =["media", "ports"]
+    dependencies = ["av", "pillow"]
 
 
 class TGPackPayload(BaseModel):
@@ -51,10 +49,13 @@ class TGStickerEngine:
     SEMAPHORE = asyncio.Semaphore(2) 
 
     @staticmethod
-    def _convert_to_webp(file_bytes: bytes, is_video: bool = False) -> bytes:
+    def _convert_to_webp(
+        file_bytes: bytes,
+        is_video: bool = False
+    ) -> bytes:
         if is_video:
             out = io.BytesIO()
-            frames = []
+            frames =[]
             try:
                 container = av.open(io.BytesIO(file_bytes))
                 for frame in container.decode(video=0):
@@ -89,10 +90,20 @@ class TGStickerEngine:
             except Exception as e:
                 raise RuntimeError(f"Static conversion failed: {e}")
 
+
     @classmethod
     async def _process_single_sticker(
-        cls, mx, session, token, sticker, pack_name, i, logger
+        cls,
+        mx,
+        token,
+        sticker,
+        pack_name,
+        i,
+        logger,
+        proxy: str = None
     ) -> Optional[StickerItem]:
+        req_kwargs = {"proxy": proxy} if proxy else {}
+
         async with cls.SEMAPHORE:
             try:
                 file_id = sticker["file_id"]
@@ -106,15 +117,29 @@ class TGStickerEngine:
                     else:
                         return None
 
-                async with session.get(f"https://api.telegram.org/bot{token}/getFile?file_id={file_id}") as f_res:
-                    f_data = await f_res.json()
-                    if not f_data.get("ok"): return None
-                    file_path = f_data["result"]["file_path"]
+                f_data = await utils.request(
+                    url=f"https://api.telegram.org/bot{token}/getFile?file_id={file_id}",
+                    method="GET",
+                    return_type="json",
+                    **req_kwargs
+                )
+                
+                if not f_data.get("ok"): 
+                    return None
+                file_path = f_data["result"]["file_path"]
 
-                async with session.get(f"https://api.telegram.org/file/bot{token}/{file_path}") as d_res:
-                    raw_bytes = await d_res.read()
+                raw_bytes = await utils.request(
+                    url=f"https://api.telegram.org/file/bot{token}/{file_path}",
+                    method="GET",
+                    return_type="bytes",
+                    **req_kwargs
+                )
 
-                processed_bytes = await asyncio.to_thread(cls._convert_to_webp, raw_bytes, is_video)
+                processed_bytes = await asyncio.to_thread(
+                    cls._convert_to_webp,
+                    raw_bytes,
+                    is_video
+                )
 
                 mxc_url = await mx.client.upload_media(
                     data=processed_bytes,
@@ -130,45 +155,56 @@ class TGStickerEngine:
                     size=len(processed_bytes),
                     shortcode=sticker.get("custom_emoji_id") or f"tg_{pack_name}_{i}",
                 )
+
             except Exception as e:
-                logger.error(f"Failed to process sticker {i}: {e}")
+                logger.exeption(f"Failed to process sticker {i}: {e}")
                 return None
+
 
     @classmethod
     async def process_pack(
-        cls, mx, token: str, pack_name: str, strings: Dict[str, str], logger: Any
+        cls, mx, token: str, pack_name: str, strings: Dict[str, str], logger: Any, proxy: str = None
     ) -> Tuple[str, List[StickerItem]]:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.telegram.org/bot{token}/getStickerSet?name={pack_name}") as res:
-                data = await res.json()
-                if not data.get("ok"):
-                    raise ValueError(strings["api_err"].format(err=data.get("description", "Unknown")))
+        req_kwargs = {"proxy": proxy} if proxy else {}
 
-            pack_data = data["result"]
-            
-            tasks = [
-                cls._process_single_sticker(mx, session, token, s, pack_name, i, logger)
-                for i, s in enumerate(pack_data["stickers"], 1)
-            ]
-            
-            results = await asyncio.gather(*tasks)
-            processed_items = [r for r in results if r is not None]
+        data = await utils.request(
+            url=f"https://api.telegram.org/bot{token}/getStickerSet?name={pack_name}",
+            method="GET",
+            return_type="json",
+            **req_kwargs
+        )
+        
+        if not data.get("ok"):
+            raise ValueError(
+                strings["api_err"].format(
+                    err=data.get("description", "Unknown")
+                )
+            )
 
-            if not processed_items:
-                raise ValueError(strings["empty_pack"])
+        pack_data = data["result"]
+        
+        tasks =[
+            cls._process_single_sticker(mx, token, s, pack_name, i, logger, proxy)
+            for i, s in enumerate(pack_data["stickers"], 1)
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        processed_items =[r for r in results if r is not None]
 
-            return pack_data["title"], processed_items
+        if not processed_items:
+            raise ValueError(strings["empty_pack"])
+
+        return pack_data["title"], processed_items
 
 
 @loader.tds
 class TGStickerPortModule(loader.Module):
     strings = {
-        "start": "🚀 <b>Turbo-import initiated... Parallel processing engaged!</b>",
-        "done": "✅ <b>Successfully imported {count} items!</b>",
-        "error": "❌ <b>Import failed:</b> <code>{err}</code>",
-        "bad_url": "❌ <b>Invalid URL:</b> Use t.me/addstickers/... or t.me/addemoji/...",
-        "api_err": "❌ <b>Telegram API Error:</b> <code>{err}</code>",
-        "empty_pack": "❌ <b>Processing Error:</b> No supported media assets found.",
+        "start": "⏳ | <b>Importing.. Pls wait :)</b>",
+        "done": "✅ | <b>Successfully imported {count} items!</b>",
+        "bad_url": "❌ | <b>Invalid URL:</b> Use t.me/addstickers/... or t.me/addemoji/...",
+        "api_err": "❌ | <b>Telegram API Error:</b> <code>{err}</code>",
+        "empty_pack": "❌ | <b>Processing Error:</b> No supported media assets found.",
     }
 
     config = {
@@ -176,20 +212,34 @@ class TGStickerPortModule(loader.Module):
             default="",
             description="Telegram Bot Token from t.me/BotFather",
             required=True,
+        ),
+        "proxy": loader.ConfigValue(
+            default="",
+            description="Proxy URL for Telegram API (e.g. http://127.0.0.1:1080). Leave empty if not needed.",
+            required=False,
         )
     }
 
     @loader.command()
     async def port(self, mx, event: MessageEvent, link: TGPackPayload):
-        """<link> - Port Telegram stickers/emojis at warp speed"""
-        if not self.config["tg_token"]:
-            raise UsageError("Configuration required: tg_token is empty.")
-
-        status_id = await utils.answer(mx, self.strings["start"])
+        """<link> - Port Telegram stickers/emojis. TGS not support!
+        👍 | Format: 
+        https://t.me/addstickers/....
+        https://t.me/addemoji/...
+        """
+        status_id = await utils.answer(
+            mx,
+            self.strings["start"]
+        )
 
         try:
             title, items = await TGStickerEngine.process_pack(
-                mx, self.config["tg_token"], link.pack_name, self.strings, self.logger
+                mx,
+                self.config["tg_token"],
+                link.pack_name,
+                self.strings,
+                self.logger,
+                self.config["proxy"]
             )
 
             images_content = {
@@ -221,8 +271,13 @@ class TGStickerPortModule(loader.Module):
                 state_key=pack_id,
             )
 
-            await utils.answer(mx, self.strings["done"].format(count=len(items)), edit_id=status_id)
+            await utils.answer(
+                mx,
+                self.strings["done"].format(
+                    count=len(items)
+                ),
+                edit_id=status_id
+            )
 
         except Exception as e:
-            self.logger.exception("Turbo-port failure")
-            await utils.answer(mx, self.strings["error"].format(err=str(e)), edit_id=status_id)
+            raise e

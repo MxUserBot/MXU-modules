@@ -1,7 +1,6 @@
 from ...core import loader, utils
 from ...core.exceptions import UsageError
 
-
 class Meta:
     name = "Astolfo"
     description = "Astolfo pic from astolfo.rocks."
