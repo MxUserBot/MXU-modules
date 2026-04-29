@@ -13,29 +13,17 @@ class Meta:
     tags = ["utility"]
 
 
-class AFKPayload(BaseModel):
-    reason: str = Field(default="", description="AFK reason")
-
-    @model_validator(mode='before')
-    @classmethod
-    def parse_payload(cls, v):
-        if isinstance(v, str):
-            return {"reason": v.strip()}
-        return v
-
-
 @loader.tds
 class AFKModule(loader.Module):
     strings = {
         "afk_on": "<b>💤 | AFK Mode Activated</b><br>Reason: <code>{reason}</code>",
         "afk_off": "<b>✅ | AFK Mode Deactivated</b>",
         "afk_reply": "<b>💤 | User is currently AFK</b><br>Reason: <code>{reason}</code>",
-        "default_reason": "Gone into the void."
     }
 
     config = {
         "enabled": loader.ConfigValue(False, "AFK status toggle", forbid=True),
-        "reason": loader.ConfigValue(strings.get("default_reason"), "AFK reason text"),
+        "reason": loader.ConfigValue(None, "AFK reason text"),
         "cooldown": loader.ConfigValue(60, "Auto-reply cooldown in seconds")
     }
 
@@ -43,9 +31,9 @@ class AFKModule(loader.Module):
         self._last_reply_times = {}
 
     @loader.command()
-    async def afk(self, mx, event, payload: AFKPayload = AFKPayload()):
+    async def afk(self, mx, event, reason: str = Field(default="Sleep", description="AFK reason")):
         """[reason] - Set AFK status"""
-        status = payload.reason or self.strings.get("default_reason")
+        status = reason
         self.config.set("enabled", True)
         self.config.set("reason", status)
 

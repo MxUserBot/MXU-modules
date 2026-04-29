@@ -6,13 +6,14 @@ from PIL import Image, ImageDraw, ImageFont
 from mautrix.types import MessageEvent, EventType
 
 from ...core import loader, utils
+from ...core.types import Image as Mimage
 from ...core.exceptions import UsageError
 
 
 class Meta:
     name = "Quotes"
     description = "rendering card-quote style images."
-    version = "3.5.1"
+    version = "3.6.0" 
     tags = ["image", "media"]
     dependencies = ["pillow"]
     author = "@pasha:pashahatsune.pp.ua"
@@ -150,30 +151,35 @@ class QuotesModule(loader.Module):
         text: str = None
     ) -> None:
         """[text/reply] - Secure aesthetic quote engine"""
-        reply_id = event.content.get_reply_to()
-
 
         status_id = await utils.answer(mx, self.strings["processing"])
 
         try:
-            target = await mx.client.get_event(event.room_id, reply_id)
-            payload = text or target.content.body
-            if not payload:
-                raise UsageError(self.strings["no_text"])
+            target = await utils.get_reply_event(mx, event)
+
+            raw_payload = text or target.content.body
+            payload = utils.normalize_text(raw_payload)
+
 
             try:
-                profile = await mx.client.get_state_event(event.room_id, EventType.ROOM_MEMBER, target.sender)
-                name = profile.displayname or target.sender
+                profile = await mx.client.get_state_event(
+                    event.room_id, EventType.ROOM_MEMBER, target.sender
+                )
+                raw_name = profile.displayname or target.sender
+                av_mxc = profile.avatar_url
             except Exception:
-                name = target.sender
-
-            try:
-                member_info = await mx.client.get_state_event(event.room_id, EventType.ROOM_MEMBER, target.sender)
-                av_mxc = member_info.avatar_url
-            except Exception:
+                raw_name = target.sender
                 av_mxc = None
 
-            av_img = await mx.client.download_media(av_mxc) if av_mxc else None
+            name = utils.normalize_text(raw_name)
+
+            av_img = None
+            if av_mxc:
+                try:
+                    av_img = await mx.client.download_media(av_mxc)
+                except Exception:
+                    pass
+                
             result = await asyncio.to_thread(
                 self._generate_payload,
                 av_img,
@@ -181,16 +187,16 @@ class QuotesModule(loader.Module):
                 name
             )
 
-            await utils.send_image(
-                mx,
-                event.room_id,
-                file_bytes=result,
-                file_name="quote.png"
+            await utils.answer(
+                mx, 
+                edit_id=status_id,
+                image=Mimage(
+                    url=result, 
+                    w=1200, 
+                    h=600, 
+                    mimetype="image/png"
+                )
             )
-            
-            await mx.client.redact(event.room_id, status_id)
-            if status_id != event.event_id:
-                await mx.client.redact(event.room_id, event.event_id)
 
         except Exception as e:
             raise e

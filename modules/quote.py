@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from ...core import loader, utils
 from ...core.exceptions import UsageError
+from ...core.types import Image
 
 
 class Meta:
@@ -111,7 +112,6 @@ class QuoteModule(loader.Module):
     strings = {
         "processing": "🎨 <b>Rendering visual quote...</b>",
         "no_reply": "❌ <b>Context required:</b> Reply to a message.",
-        "error": "❌ <b>Render failure:</b> <code>{err}</code>",
         "font_err": "❌ <b>Resource error:</b> Typography assets not loaded.",
         "font_render_err": "❌ <b>Engine error:</b> Font rasterization failed.",
         "invalid_image": "❌ <b>Media error:</b> Failed to process avatar."
@@ -129,6 +129,7 @@ class QuoteModule(loader.Module):
             self.logger.info("Typography assets successfully buffered in memory.")
         except Exception as e:
             self.logger.error(f"Asset acquisition failed: {e}")
+
 
     @loader.command()
     async def q(self, mx, event: MessageEvent):
@@ -177,24 +178,17 @@ class QuoteModule(loader.Module):
                 self.strings
             )
 
-            await utils.send_image(
-                mx=mx,
-                room_id=event.room_id,
-                file_bytes=result,
-                file_name="quote.png",
-                info=ImageInfo(
-                    mimetype="image/png", 
-                    size=len(result),
-                    width=width,
-                    height=height
-                )
+            await utils.answer(
+                mx,
+                image=Image(
+                    url=result,
+                    w=width,
+                    h=height,
+                    mimetype="image/png"
+
+                ),
+                edit_id=status_id
             )
-            
-            await mx.client.redact(event.room_id, status_id)
 
         except Exception as e:
-            self.logger.error(f"Quote pipeline failed: {e}", exc_info=True)
-            err_msg = str(e)
-            if err_msg not in self.strings.values():
-                err_msg = self.strings["error"].format(err=err_msg)
-            await utils.answer(mx, err_msg, edit_id=status_id)
+            raise e

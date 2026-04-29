@@ -1,181 +1,64 @@
-from typing import Literal
-
+import asyncio
 from mautrix.types import MessageEvent
-from pydantic import BaseModel, Field
 
 from ...core import loader, utils
-from ...core.types import FSMContext, State, StatesGroup
 
 
 class Meta:
-    name = "StateManagementExample"
-    description = "Demonstrates loader.state and FSMContext"
-    version = "2.3.0"
-    tags = ["example", "fsm", "state"]
-
-
-class SurveyStates(StatesGroup):
-    name = State()
-    age = State()
-    color = State()
-    confirm = State()
-
-
-class FeedbackStates(StatesGroup):
-    rating = State()
-    comment = State()
+    name = "TextToImage"
+    description = "Превращает текстовое сообщение в картинку (m.text -> m.image)"
+    version = "1.1.0"
+    tags = ["fun", "media"]
 
 
 @loader.tds
-class StateManagementExampleModule(loader.Module):
-    strings = {
-        "survey_start": "📝 Let's create a profile. What is your name?",
-        "survey_age": "Nice to meet you, {name}. How old are you?",
-        "survey_color": "Got it. What is your favorite color?",
-        "survey_confirm": (
-            "<b>Profile summary</b><br>"
-            "name = <code>{name}</code><br>"
-            "age = <code>{age}</code><br>"
-            "color = <code>{color}</code><br><br>"
-            "Reply with <code>yes</code> or <code>no</code>."
-        ),
-        "survey_done": "✅ Profile saved.",
-        "survey_cancelled": "❌ Survey cancelled.",
-        "feedback_start": "⭐ Rate the bot from 1 to 5.",
-        "feedback_comment": "✍️ Leave a comment or send <code>-</code>.",
-        "feedback_done": "✅ Feedback saved. Rating: <code>{rating}/5</code>.",
-    }
-
+class TextToImageModule(loader.Module):
+    
     @loader.command()
-    async def survey(
-        self,
-        mx,
-        event: MessageEvent,
-        action: Literal["start", "cancel"] = "start",
-    ):
-        """[start/cancel] - start or cancel the profile survey"""
-        state = FSMContext(mx.fsm, event)
-
-        if action == "cancel":
-            await state.clear()
-            await utils.answer(mx, self.strings["survey_cancelled"])
-            return
-
-        await state.clear()
-        await state.set_state(SurveyStates.name)
-        await utils.answer(mx, self.strings["survey_start"])
-
-    @loader.state(SurveyStates.name)
-    async def process_survey_name(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        name: str = Field(min_length=1, max_length=32)
-,
-    ):
-        await state.update_data(name=name)
-        await state.set_state(SurveyStates.age)
-        await event.reply(self.strings["survey_age"].format(name=name))
-
-    @loader.state(SurveyStates.age)
-    async def process_survey_age(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        age: int = Field(ge=1, le=120)
-,
-    ):
-        await state.update_data(age=age)
-        await state.set_state(SurveyStates.color)
-        await event.reply(self.strings["survey_color"])
-
-    @loader.state(SurveyStates.color)
-    async def process_survey_color(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        color: str = "unknown"
-,
-    ):
-        data = await state.get_data()
-
-        await state.update_data(color=color)
-        await state.set_state(SurveyStates.confirm)
-        await event.reply(
-            self.strings["survey_confirm"].format(
-                name=data["name"],
-                age=data["age"],
-                color=color,
-            )
+    async def magic(self, mx, event: MessageEvent):
+        """- превратить это сообщение в картинку через 2 секунды"""
+        
+        # 1. Редактируем саму команду в статус загрузки
+        await utils.answer(
+            mx, 
+            "1", 
+            event=event, 
+            edit_id=event.event_id
         )
+        
+        # 2. Ждем 2 секунды
+        await asyncio.sleep(2)
+        
+        # 3. Твой MXC URL
+        mxc_url = "mxc://pashahatsune.pp.ua/DUdVAMG7QaWXXHBHbjT7Uj0QzZzSij9s"
+        
+        # 4. Формируем payload. 
+        # Чтобы убрать рамки и искажения, мы указываем параметры "w" и "h".
+        # Также мы меняем msgtype на m.image на верхнем уровне.
+        
+        image_info = {
+            "mimetype": "image/png",
+            "w": 1200,  # Ширина картинки
+            "h": 600,   # Высота картинки
+            "size": 0   # Можно оставить 0 или не указывать
+        }
 
-    @loader.state(SurveyStates.confirm)
-    async def process_survey_confirm(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        answer: Literal["yes", "y", "да", "no", "n", "нет", "cancel"]
-,
-    ):
-        if answer in {"no", "n", "нет", "cancel"}:
-            await state.clear()
-            await event.reply(self.strings["survey_cancelled"])
-            return
-
-        data = await state.get_data()
-        await state.clear()
-        await event.reply(self.strings["survey_done"])
-        self.logger.info(f"Saved survey payload: {data}")
-
-    @loader.command()
-    async def feedback(self, mx, event: MessageEvent):
-        """start a feedback flow"""
-        state = FSMContext(mx.fsm, event)
-        await state.clear()
-        await state.set_state(FeedbackStates.rating)
-        await utils.answer(mx, self.strings["feedback_start"])
-
-    @loader.state(FeedbackStates.rating)
-    async def process_feedback_rating(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        rating: int = Field(ge=1, le=5)
-,
-    ):
-        await state.update_data(rating=rating)
-        await state.set_state(FeedbackStates.comment)
-        await event.reply(self.strings["feedback_comment"])
-
-    @loader.state(FeedbackStates.comment)
-    async def process_feedback_comment(
-        self,
-        mx,
-        event,
-        state: FSMContext,
-        comment: str = ""
-,
-    ):
-        data = await state.get_data()
-        saved_comment = "" if comment.strip() == "-" else comment
-
-        await state.clear()
-        await event.reply(
-            self.strings["feedback_done"].format(rating=data["rating"])
-        )
-        self.logger.info(
-            "Saved feedback payload: "
-            f"rating={data['rating']} comment={saved_comment}"
-        )
-
-    @loader.command()
-    async def cancel_survey(self, mx, event: MessageEvent):
-        """cancel current FSM state"""
-        state = FSMContext(mx.fsm, event)
-        await state.clear()
-        await utils.answer(mx, self.strings["survey_cancelled"])
+        edit_payload = {
+            "msgtype": "m.image",
+            "body": "magic_image.png",
+            "url": mxc_url,
+            "info": image_info,
+            "m.new_content": {
+                "msgtype": "m.image",
+                "body": "magic_image.png",
+                "url": mxc_url,
+                "info": image_info
+            },
+            "m.relates_to": {
+                "rel_type": "m.replace",
+                "event_id": event.event_id
+            }
+        }
+        
+        # 5. Отправляем
+        await mx.client.send_message(event.room_id, edit_payload)
