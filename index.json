@@ -1,4 +1,43 @@
 {
+  "quotecard": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quotecard.py",
+    "author": "@pasha:pashahatsune.pp.ua",
+    "dependencies": [
+      "pillow"
+    ],
+    "tags": [
+      "image",
+      "media"
+    ],
+    "name": "Quotes",
+    "description": "rendering card-quote style images.",
+    "version": "3.6.0"
+  },
+  "quote": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quote.py",
+    "author": "@pasha:pashahatsune.pp.ua",
+    "dependencies": [
+      "pillow"
+    ],
+    "tags": [
+      "image",
+      "media"
+    ],
+    "name": "Quote",
+    "description": "Element-style quotes",
+    "version": "2.1.0"
+  },
+  "afk": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/afk.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "utility"
+    ],
+    "name": "AFK",
+    "description": "AFK MODULE",
+    "version": "2.3.0"
+  },
   "stickers": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/stickers.py",
     "author": "Unknown",
@@ -13,30 +52,6 @@
     "name": "TGStickerPort",
     "description": "Telegram sticker/emoji migration engine. NOT SUPPORT TGS",
     "version": "3.6.0-TURBO"
-  },
-  "test": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/test.py",
-    "author": "Unknown",
-    "dependencies": [],
-    "tags": [
-      "example",
-      "fsm",
-      "state"
-    ],
-    "name": "StateManagementExample",
-    "description": "Demonstrates loader.state and FSMContext",
-    "version": "2.3.0"
-  },
-  "afk": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/afk.py",
-    "author": "Unknown",
-    "dependencies": [],
-    "tags": [
-      "utility"
-    ],
-    "name": "AFK",
-    "description": "AFK MODULE",
-    "version": "2.3.0"
   },
   "astolfo": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/astolfo.py",
@@ -95,20 +110,6 @@
     "description": "Кастомные приветствия для каждого чата",
     "version": "1.0.0"
   },
-  "quotecard": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quotecard.py",
-    "author": "@pasha:pashahatsune.pp.ua",
-    "dependencies": [
-      "pillow"
-    ],
-    "tags": [
-      "image",
-      "media"
-    ],
-    "name": "Quotes",
-    "description": "rendering card-quote style images.",
-    "version": "3.5.1"
-  },
   "yt-misic": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/yt-misic.py",
     "author": "@pasha:pashahatsune.pp.ua",
@@ -155,20 +156,6 @@
     "name": "Rule34",
     "description": "API wrapper for Rule34.",
     "version": "2.0.0"
-  },
-  "quote": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quote.py",
-    "author": "@pasha:pashahatsune.pp.ua",
-    "dependencies": [
-      "pillow"
-    ],
-    "tags": [
-      "image",
-      "media"
-    ],
-    "name": "Quote",
-    "description": "Element-style quotes",
-    "version": "2.1.0"
   },
   "lastfm": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/lastfm.py",
