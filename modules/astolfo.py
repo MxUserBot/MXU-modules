@@ -1,5 +1,6 @@
-from ...core import loader, utils
-from ...core.exceptions import UsageError
+from .. import loader, utils
+from ..core.utils.media_types import Image
+
 
 class Meta:
     name = "Astolfo"
@@ -25,8 +26,9 @@ class AstolfoModule(loader.Module):
         rating: str = "safe"
     ):
         """<rating> - Summon a random Astolfo picture"""
-        
-        await utils.answer(mx, self.strings.get("fetching"))
+
+
+        ids = await utils.answer(mx, self.strings.get("fetching"))
 
         api_url = "https://astolfo.rocks/api/images/random"
 
@@ -37,14 +39,22 @@ class AstolfoModule(loader.Module):
             ext = data["file_extension"]
             img_url = f"https://astolfo.rocks/astolfo/{img_id}.{ext}"
 
-            await utils.send_image(
-                mx, 
-                event, 
-                url=img_url, 
-                caption=self.strings.get("caption").format(id=img_id, rating=rating)
+
+            image_bytes = await utils.request(
+                url=img_url,
+                return_type="bytes"
             )
 
-        except (TypeError, KeyError, IndexError):
-            raise UsageError()
+            await utils.answer(
+                mx,
+                media=Image(
+                    url=image_bytes,
+                    caption=self.strings.get("caption").format(id=img_id, rating=rating),
+                    filename="astolfo.png",
+                    mimetype="image/png"
+                ),
+                edit_id=ids
+            )
+
         except Exception as e:
             raise e

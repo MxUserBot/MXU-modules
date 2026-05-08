@@ -5,7 +5,7 @@ from typing import List, Any
 from mautrix.types import EventType, MessageEvent
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-from ...core import loader, utils
+from ..core import loader, utils
 
 
 class Meta:

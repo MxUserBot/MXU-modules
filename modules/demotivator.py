@@ -7,8 +7,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from mautrix.types import MessageEvent, MessageType
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-from ...core import loader, utils
-from ...core.exceptions import UsageError
+from ..core import loader, utils
+from ..core.exceptions import UsageError
+from ..core.utils.media_types import Image as MXImage
 
 
 class Meta:
@@ -16,7 +17,7 @@ class Meta:
     description = "demotivator generator."
     version = "4.1.0"
     tags = ["image", "media"]
-    dependencies = ["pillow"]
+    dependencies = ["pillow", "telethon"]
     author = "@pasha:pashahatsune.pp.ua"
 
 
@@ -156,7 +157,14 @@ class DemotivatorModule(loader.Module):
                 self.strings
             )
 
-            await utils.send_image(mx, event.room_id, file_bytes=result, file_name="demot.jpg")
+            await utils.answer(
+                mx,
+                media=MXImage(
+                    url=result,
+                    filename="demot.jpg",
+                    mimetype="image/jpeg",
+                ),
+            )
             await mx.client.redact(event.room_id, status_id)
 
         except Exception as e:

@@ -142,3 +142,6 @@ voice_msg.p
 crypto.*
 lastfm_config.*
 *.p
+
+# module source folders (packaged into .zip by script.py)
+modules/*/

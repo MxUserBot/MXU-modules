@@ -9,7 +9,7 @@ from PIL import Image
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent
 
-from ...core import loader, utils
+from ..core import loader, utils
 
 
 class Meta:
@@ -157,7 +157,7 @@ class TGStickerEngine:
                 )
 
             except Exception as e:
-                logger.exeption(f"Failed to process sticker {i}: {e}")
+                logger.exception(f"Failed to process sticker {i}: {e}")
                 return None
 
 

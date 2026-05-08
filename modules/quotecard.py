@@ -5,9 +5,9 @@ import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from mautrix.types import MessageEvent, EventType
 
-from ...core import loader, utils
-from ...core.types import Image as Mimage
-from ...core.exceptions import UsageError
+from ..core import loader, utils
+from ..core.utils.media_types import Image as Mimage
+from ..core.exceptions import UsageError
 
 
 class Meta:
@@ -190,7 +190,7 @@ class QuotesModule(loader.Module):
             await utils.answer(
                 mx, 
                 edit_id=status_id,
-                image=Mimage(
+                media=Mimage(
                     url=result, 
                     w=1200, 
                     h=600, 

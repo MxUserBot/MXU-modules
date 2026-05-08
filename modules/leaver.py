@@ -3,7 +3,7 @@ from typing import Literal
 
 from mautrix.types import EventType
 
-from ...core import loader, utils
+from ..core import loader, utils
 
 
 class Meta:
@@ -76,7 +76,7 @@ class ChatMassacreModule(loader.Module):
         
         g = await utils.answer(mx, self.strings.get("starting").format(mode=mode, target=target))
         
-        log_room = await mx._bot._db.get("core", "log_room_id")
+        log_room = await mx._db.get("core", "log_room_id")
         joined_rooms = await mx.client.get_joined_rooms()
         count = 0
 

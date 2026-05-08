@@ -2,9 +2,9 @@ import time
 
 from mautrix.types import EventType, MessageEvent
 
-from ...core import loader, utils
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field
 
+from ..core import loader, utils
 
 class Meta:
     name = "AFK"

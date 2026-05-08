@@ -1,11 +1,8 @@
 import asyncio
 import yt_dlp
-from mautrix.types import (
-    MessageEvent, EventType, MessageType, 
-    MediaMessageEventContent, AudioInfo
-)
 
-from ...core import loader, utils
+from ..core import loader, utils
+from ..core.utils.media_types import Audio
 
 
 class Meta:
@@ -13,6 +10,7 @@ class Meta:
     description = "YouTube Music Downloader."
     version = "1.2.1"
     tags = ["downloader", "media"]
+    dependencies = ["yt-dlp"]
     author = "@pasha:pashahatsune.pp.ua"
 
 
@@ -29,11 +27,11 @@ class YTMusicModule(loader.Module):
         return await loop.run_in_executor(None, lambda: ydl.extract_info(query, download=True))
 
     @loader.command()
-    async def ytm(self, mx, event: MessageEvent, query: str):
+    async def ytm(self, mx, event, query: str):
         """<query/link/reply> | Download audio from YouTube"""
         
         status_id = await utils.answer(mx, self.strings.get("searching").format(query=query))
-        print(status_id)
+
         
         file_id = f"ytm_{event.event_id}"
         out_tmpl = str(utils.COMM_DIR / f"{file_id}.%(ext)s")
@@ -78,18 +76,18 @@ class YTMusicModule(loader.Module):
                 with open(final_path, "rb") as f:
                     file_bytes = f.read()
 
-                mxc = await mx.client.upload_media(file_bytes, mime_type="audio/mpeg", filename=f"{title}.mp3")
+            await utils.answer(
+                mx,
+                text=f"{uploader} - {title}",
+                media=Audio(
+                    url=file_bytes,
+                    filename=f"{uploader} - {title}.mp3",
+                    duration=duration * 1000,
+                    size=len(file_bytes) # ОБЯЗАТЕЛЬНО передавай размер!
+                ),
+                edit_id=status_id # Теперь это сработает, т.к. типы совпали!
+            )
 
-                content = MediaMessageEventContent(
-                    msgtype=MessageType.AUDIO,
-                    body=f"{uploader} - {title}.mp3",
-                    url=mxc,
-                    info=AudioInfo(mimetype="audio/mpeg", size=len(file_bytes), duration=int(duration * 1000))
-                )
-
-                await mx.client.send_message(event.room_id, content)
-
-                await mx.client.redact(event.room_id, status_id)
 
         except Exception as e:
             raise e

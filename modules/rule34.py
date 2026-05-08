@@ -5,7 +5,8 @@ from typing import Dict, Optional
 from pydantic import BaseModel
 from mautrix.types import MessageEvent
 
-from ...core import loader, utils
+from ..core import loader, utils
+from ..core.utils.media_types import Image
 
 
 class Meta:
@@ -111,11 +112,15 @@ class Rule34Module(loader.Module):
             await utils.answer(mx, self.strings["warning"])
             await asyncio.sleep(self.config["safety_delay"])
 
-            await utils.send_image(
+            await utils.answer(
                 mx,
-                room_id=event.room_id,
-                url=url,
-                caption=self.strings["used_tag"].format(tag=utils.escape_html(tags or "none"))
+                media=Image(
+                    url=url,
+                    caption=self.strings["used_tag"].format(
+                        tag=utils.escape_html(tags or "none"),
+                    ),
+                ),
+                event=event,
             )
 
         except Exception as e:

@@ -3,12 +3,12 @@ from typing import Any, Optional
 from mautrix.types import MessageEvent
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-from ...core import loader, utils
+from ..core import loader, utils
 
 
 class Meta:
     name = "JarvisModule"
-    _cls_doc = "Jarvis (AI assist)"
+    description = "Jarvis (AI assist)"
     version = "1.1.0"
     tags = ["ai"]
     author = "@pasha:pashahatsune.pp.ua"

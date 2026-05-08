@@ -1,5 +1,6 @@
-from ...core import loader, utils
-from ...core.exceptions import UsageError
+from ..core import loader, utils
+from ..core.exceptions import UsageError
+from ..core.utils.media_types import Image
 
 
 class Meta:
@@ -25,7 +26,7 @@ class CatGirlModule(loader.Module):
         event
     ):
         """Summon a random catgirl picture"""
-        await utils.answer(mx, self.strings.get("fetching"))
+        ids = await utils.answer(mx, self.strings.get("fetching"))
 
         api_url = "https://api.nekosia.cat/api/v1/images/catgirl"
 
@@ -35,11 +36,20 @@ class CatGirlModule(loader.Module):
             img_url = data["image"]["original"]["url"]
             img_id = data["id"]
 
-            await utils.send_image(
-                mx, 
-                event, 
-                url=img_url, 
-                caption=self.strings.get("caption").format(id=img_id)
+
+            image_bytes = await utils.request(
+                url=img_url,
+                return_type="bytes"
+            )
+
+            await utils.answer(
+                mx,
+                media=Image(
+                    url=image_bytes,
+                    caption=self.strings.get("caption").format(id=img_id)
+                ),
+                edit_id=ids
+
             )
 
         except (TypeError, KeyError, IndexError):

@@ -6,7 +6,8 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent, MessageType, MediaMessageEventContent, VideoInfo
 
-from ...core import loader, utils
+from ..core import loader, utils
+from ..core.utils.media_types import Video
 
 
 class Meta:
@@ -116,20 +117,21 @@ class TikTokDLModule(loader.Module):
 
             await utils.answer(mx, self.strings["uploading"], edit_id=status_id)
             mxc = await mx.client.upload_media(final_video, mime_type="video/mp4")
-            
-            content = MediaMessageEventContent(
-                msgtype=MessageType.VIDEO,
-                url=mxc,
-                body=f"tiktok_{uuid.uuid4().hex[:4]}.mp4",
-                info=VideoInfo(
+
+            await utils.answer(
+                mx, 
+                media=Video(
+                    url=mxc,
                     mimetype="video/mp4", 
-                    size=len(final_video)
-                )
+                    size=len(final_video),
+                    w=600,
+                    h=900
+
+                ),
+                edit_id=status_id
             )
             
-            await mx.client.send_message(event.room_id, content)
-            
-            await mx.client.redact(event.room_id, status_id)
+            # await mx.client.redact(event.room_id, status_id)
             if status_id != event.event_id:
                 await mx.client.redact(event.room_id, event.event_id)
 

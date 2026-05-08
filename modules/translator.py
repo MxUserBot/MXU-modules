@@ -1,5 +1,5 @@
 from googletrans import Translator
-from ...core import loader
+from ..core import loader
 
 
 class Meta:

@@ -4,7 +4,7 @@ from typing import Optional, Dict
 from pydantic import BaseModel
 from mautrix.types import MessageEvent
 
-from ...core import loader, utils
+from ..core import loader, utils
 
 
 class Meta:
