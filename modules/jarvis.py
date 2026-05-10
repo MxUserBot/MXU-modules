@@ -1,9 +1,11 @@
-from typing import Any, Optional
-
-from mautrix.types import MessageEvent
-from pydantic import BaseModel, Field, model_validator, ConfigDict
-
-from ..core import loader, utils
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -11,7 +13,16 @@ class Meta:
     description = "Jarvis (AI assist)"
     version = "1.1.0"
     tags = ["ai"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+from typing import Any, Optional
+
+from mautrix.types import MessageEvent
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+
+from mxc import utils
+from .. import loader
 
 
 class JarvisPayload(BaseModel):

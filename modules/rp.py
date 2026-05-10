@@ -1,7 +1,11 @@
-from ..core import loader, utils
-
-
-MANAGEMENT_CMDS = {"add", "new", "remove", "rm", "del", "delete", "list"}
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -9,6 +13,13 @@ class Meta:
     description = "RP actions via .rp"
     version = "2.0.0"
     tags = ["roleplay", "fun"]
+
+
+from mxc import utils
+from .. import loader
+
+
+MANAGEMENT_CMDS = {"add", "new", "remove", "rm", "del", "delete", "list"}
 
 
 class RolePlayStore:
@@ -235,7 +246,6 @@ class RolePlayModule(loader.Module):
                 callback=on_confirm,
                 allowed_senders=allowed,
                 single_use=True,
-                # timeout=60,
             )
 
             await utils.answer(

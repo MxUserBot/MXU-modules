@@ -1,15 +1,11 @@
-import io
-import asyncio
-import textwrap
-from typing import Dict, Optional, Tuple
-
-from pydantic import BaseModel, ConfigDict
-from mautrix.types import MessageEvent, Event
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-
-from ..core import loader, utils
-from ..core.exceptions import UsageError
-from ..core.utils.media_types import Image as MXImage
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -18,7 +14,22 @@ class Meta:
     version = "2.2.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+import io
+import asyncio
+import textwrap
+from typing import Optional, Tuple
+
+from pydantic import BaseModel, ConfigDict
+from mautrix.types import MessageEvent
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+from mxc import utils
+from mxc.exceptions import UsageError
+from mxc.types import Image as MXImage
+from .. import loader
 
 
 class QuoteEntry(BaseModel):
@@ -189,7 +200,7 @@ class QuoteModule(loader.Module):
 
     @loader.command()
     async def q(self, mx, event: MessageEvent):
-        """[count] - Create Element-style quote. Reply + /q [N] for multi-quote."""
+        """[count] - Create Element-style quote. Reply + q [N] for multi-quote."""
         if not self._fonts.get("regular") or not self._fonts.get("bold"):
             raise UsageError(self.strings["font_err"])
 
@@ -201,11 +212,10 @@ class QuoteModule(loader.Module):
             except ValueError:
                 count = 1
 
-        reply = await utils.get_reply_event(mx, event)
-        if not reply:
-            raise UsageError(self.strings["no_reply"])
-
         status_id = await utils.answer(mx, self.strings["processing"])
+
+        reply = await utils.get_reply_event(mx, event)
+
 
         entries = []
 
@@ -214,37 +224,19 @@ class QuoteModule(loader.Module):
             if entry:
                 entries.append(entry)
         else:
-            reply_to = event.content.relates_to.in_reply_to
-            context = await mx.client.api.request(
-                "GET",
-                f"/_matrix/client/v3/rooms/{event.room_id}/context/{reply_to.event_id}",
+            context_events = await utils.get_context_events(
+                mx, event.room_id, reply.event_id, limit=50
             )
-
-            before = context.get("events_before", [])
-            the_event = context.get("event")
-            all_dicts = before + ([the_event] if the_event else [])
-            all_dicts = all_dicts[-count:]
-
-            for evt_dict in all_dicts:
-                try:
-                    evt = Event.deserialize(evt_dict)
-
-                    if evt.type == "m.room.encrypted":
-                        from ..core.utils.events import decrypt_event
-                        if not await decrypt_event(mx, evt):
-                            continue
-
-                    if not getattr(evt.content, "body", None):
-                        continue
-
-                    entry = await self._build_entry(mx, evt)
-                    if entry:
-                        entries.append(entry)
-                except Exception:
+            context_events.reverse()
+            for evt in context_events:
+                if len(entries) >= count:
+                    break
+                if not getattr(evt.content, "body", None):
                     continue
+                entry = await self._build_entry(mx, evt)
+                if entry:
+                    entries.append(entry)
 
-        if not entries:
-            raise UsageError(self.strings["no_quoteable"])
 
         result, width, height = await asyncio.to_thread(
             QuoteEngine.render,

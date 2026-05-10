@@ -1,3 +1,21 @@
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
+
+
+class Meta:
+    name = "Chat Export"
+    description = "Exports chat history into a ZIP archive with HTML pages, avatars, and media files."
+    version = "2.2.0"
+    tags = ["utility", "export"]
+    author = "https://github.com/PashaHatsune"
+
+
 import math
 import uuid
 import asyncio
@@ -10,16 +28,9 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 from mautrix.types import MessageEvent, EventType
 from mautrix.errors import MNotFound
 
-from ..core import loader, utils
-from ..core.utils.media_types import Document
-
-
-class Meta:
-    name = "Chat Export"
-    description = "Exports chat history into a ZIP archive with HTML pages, avatars, and media files."
-    version = "2.2.0"
-    tags = ["utility", "export"]
-    author = "@pasha:pashahatsune.pp.ua"
+from mxc import utils
+from mxc.types import Document
+from .. import loader
 
 
 class ExportPayload(BaseModel):

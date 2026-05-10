@@ -1,5 +1,11 @@
-from .. import loader, utils
-from ..core.utils.media_types import Image
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -7,6 +13,11 @@ class Meta:
     description = "Astolfo pic from astolfo.rocks."
     version = "2.0.0"
     tags = ["api", "media"]
+
+
+from mxc import utils
+from mxc.types import Image
+from .. import loader
 
 
 @loader.tds

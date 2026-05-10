@@ -1,8 +1,11 @@
-import asyncio
-import yt_dlp
-
-from ..core import loader, utils
-from ..core.utils.media_types import Audio
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -11,7 +14,15 @@ class Meta:
     version = "1.2.1"
     tags = ["downloader", "media"]
     dependencies = ["yt-dlp"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+import asyncio
+import yt_dlp
+
+from mxc import utils
+from mxc.types import Audio
+from .. import loader
 
 
 @loader.tds
@@ -83,9 +94,9 @@ class YTMusicModule(loader.Module):
                     url=file_bytes,
                     filename=f"{uploader} - {title}.mp3",
                     duration=duration * 1000,
-                    size=len(file_bytes) # ОБЯЗАТЕЛЬНО передавай размер!
+                    size=len(file_bytes)
                 ),
-                edit_id=status_id # Теперь это сработает, т.к. типы совпали!
+                edit_id=status_id
             )
 
 

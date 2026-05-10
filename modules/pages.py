@@ -1,12 +1,25 @@
-from mautrix.types import MessageEvent
-from ..core import loader, utils
-from ..core.utils.emoji import EmojiKeyBoard
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
+
 
 class Meta:
     name = "EmojiCallbacks"
     description = "Examples for reaction-driven pages, choices, confirmations and ratings"
     version = "3.0.0"
     tags = ["examples", "callbacks", "ui"]
+
+
+from mautrix.types import MessageEvent
+from mxc import utils
+from mxc.utils.emoji import EmojiKeyBoard
+from .. import loader
+
 
 @loader.tds
 class PagesModule(loader.Module):

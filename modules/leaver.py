@@ -1,9 +1,11 @@
-import asyncio
-from typing import Literal
-
-from mautrix.types import EventType
-
-from ..core import loader, utils
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -11,7 +13,16 @@ class Meta:
     description = "leaver chats"
     version = "3.1.0"
     tags = ["utility", "admin"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+import asyncio
+from typing import Literal
+
+from mautrix.types import EventType
+
+from mxc import utils
+from .. import loader
 
 
 @loader.tds
@@ -76,7 +87,7 @@ class ChatMassacreModule(loader.Module):
         
         g = await utils.answer(mx, self.strings.get("starting").format(mode=mode, target=target))
         
-        log_room = await mx._db.get("core", "log_room_id")
+        log_room = await self._get("log_room_id")
         joined_rooms = await mx.client.get_joined_rooms()
         count = 0
 

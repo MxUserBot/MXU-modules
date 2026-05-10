@@ -1,3 +1,22 @@
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
+
+
+class Meta:
+    name = "Demotivator"
+    description = "demotivator generator."
+    version = "4.1.0"
+    tags = ["image", "media"]
+    dependencies = ["pillow", "telethon"]
+    author = "https://github.com/PashaHatsune"
+
+
 import io
 import asyncio
 import textwrap
@@ -7,18 +26,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from mautrix.types import MessageEvent, MessageType
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-from ..core import loader, utils
-from ..core.exceptions import UsageError
-from ..core.utils.media_types import Image as MXImage
-
-
-class Meta:
-    name = "Demotivator"
-    description = "demotivator generator."
-    version = "4.1.0"
-    tags = ["image", "media"]
-    dependencies = ["pillow", "telethon"]
-    author = "@pasha:pashahatsune.pp.ua"
+from mxc import utils
+from mxc.exceptions import UsageError
+from mxc.types import Image as MXImage
+from .. import loader
 
 
 class DemotPayload(BaseModel):

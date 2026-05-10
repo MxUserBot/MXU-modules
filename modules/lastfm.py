@@ -1,10 +1,11 @@
-import asyncio
-from typing import Optional, Dict
-
-from pydantic import BaseModel
-from mautrix.types import MessageEvent
-
-from ..core import loader, utils
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
@@ -12,7 +13,17 @@ class Meta:
     description = "Last.fm synchronization for Matrix RPC."
     version = "3.0.0"
     tags = ["music", "rpc"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+import asyncio
+from typing import Optional, Dict
+
+from pydantic import BaseModel
+from mautrix.types import MessageEvent
+
+from mxc import utils
+from .. import loader
 
 
 class SongData(BaseModel):
@@ -167,7 +178,7 @@ class LastFMModule(loader.Module):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"LastFM Loop Error: {e}")
+                raise e
             
             await asyncio.sleep(self.config["interval"])
 

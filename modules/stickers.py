@@ -1,3 +1,21 @@
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
+
+
+class Meta:
+    name = "TGStickerPort"
+    description = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
+    version = "3.6.0-TURBO"
+    tags =["media", "ports"]
+    dependencies = ["av", "pillow"]
+
+
 import io
 import re
 import uuid
@@ -9,15 +27,8 @@ from PIL import Image
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent
 
-from ..core import loader, utils
-
-
-class Meta:
-    name = "TGStickerPort"
-    description = "Telegram sticker/emoji migration engine. NOT SUPPORT TGS"
-    version = "3.6.0-TURBO"
-    tags =["media", "ports"]
-    dependencies = ["av", "pillow"]
+from mxc import utils
+from .. import loader
 
 
 class TGPackPayload(BaseModel):

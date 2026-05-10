@@ -1,3 +1,21 @@
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
+
+
+class Meta:
+    name = "TikTokDL"
+    description = " TikTok downloader"
+    version = "3.2.1"
+    tags = ["media", "api"]
+    author = "https://github.com/PashaHatsune"
+
+
 import re
 import uuid
 import asyncio
@@ -6,16 +24,9 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from mautrix.types import MessageEvent, MessageType, MediaMessageEventContent, VideoInfo
 
-from ..core import loader, utils
-from ..core.utils.media_types import Video
-
-
-class Meta:
-    name = "TikTokDL"
-    description = " TikTok downloader"
-    version = "3.2.1"
-    tags = ["media", "api"]
-    author = "@pasha:pashahatsune.pp.ua"
+from mxc import utils
+from mxc.types import Video
+from .. import loader
 
 
 class TikTokPayload(BaseModel):

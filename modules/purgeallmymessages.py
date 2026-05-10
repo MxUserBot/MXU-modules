@@ -1,19 +1,32 @@
-
-import asyncio
-from typing import List, Any
-
-from mautrix.types import EventType, MessageEvent
-from pydantic import BaseModel, Field, model_validator, ConfigDict
-
-from ..core import loader, utils
+#			__  ____  ___   _               _           _   
+#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
+#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
+#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
+#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
+#
+# 🔒      Licensed under the GNU AGPLv3
+# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 class Meta:
     name = "Purge Messages"
     description = "Purge Messages"
-    version = "3.6.0"
+    version = "3.7.0"
     tags = ["messages"]
-    author = "@pasha:pashahatsune.pp.ua"
+    author = "https://github.com/PashaHatsune"
+
+
+import asyncio
+from typing import Any
+
+from mautrix.types import MessageEvent
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+
+from mxc import utils
+from mxc.types import MsgType
+from .. import loader
+
+
 
 
 class PurgePayload(BaseModel):
@@ -44,69 +57,53 @@ class PurgeService:
         self.mx = mx
         self.room_id = room_id
         self.requester_id = requester_id
-        self.valid_types = {
-            EventType.ROOM_MESSAGE,
-            EventType.ROOM_ENCRYPTED,
-            EventType.REACTION,
-        }
 
-
-    async def collect_targets(
-        self,
-        mode: str,
-        exclude_id: str
-    ) -> List[str]:
-        targets = []
+    async def run(self, mode: str, exclude_id: str) -> int:
+        count = 0
         token = None
-        
-        filter_sender = None
-        if mode == "me":
-            filter_sender = self.requester_id
-        elif mode != "all":
-            filter_sender = mode 
 
         while True:
-            resp = await utils.fetch_room_messages(self.mx, self.room_id, from_token=token)
-            events = resp.get("chunk", [])
+            resp = await utils.fetch_room_messages(
+                self.mx,
+                self.room_id,
+                from_token=token, types={
+                    MsgType.TEXT,
+                    MsgType.IMAGE,
+                    MsgType.VIDEO,
+                    MsgType.AUDIO,
+                    MsgType.FILE,
+                    MsgType.EMOTE,
+                    MsgType.NOTICE,
+                    MsgType.STICKER,
+                    MsgType.REACTION,
+                },
+            )
+            chunk = resp.get("chunk", [])
             token = resp.get("end")
 
-            if not events:
+            if not chunk:
                 break
 
-            for evt in events:
-                eid = evt.get("event_id")
+            for evt in chunk:
+                if evt.get("event_id") == exclude_id:
+                    continue
+
                 sender = evt.get("sender")
-                
-                if eid == exclude_id:
-                    continue
+                if mode == "all" or sender == self._filter_sender(mode):
+                    await self.mx.client.redact(self.room_id, evt["event_id"], reason="Purge")
+                    count += 1
 
-                if evt.get("type") not in [t.t for t in self.valid_types]:
-                    continue
-
-                if mode == "all" or sender == filter_sender:
-                    targets.append(eid)
-
-            if not token or not events:
+            if not token:
                 break
-                
-            await asyncio.sleep(0.5) 
-            
-        return targets
 
-    async def execute(
-        self, 
-        event_ids: List[str]
-    ) -> int:
-        count = 0
-        for eid in event_ids:
-            try:
-                await self.mx.client.redact(self.room_id, eid, reason="Purge")
-                count += 1
-                await asyncio.sleep(0.5) 
-            except Exception as e:
-                raise e
+            await asyncio.sleep(0.5)
+
         return count
 
+    def _filter_sender(self, mode: str) -> str:
+        if mode == "me":
+            return self.requester_id
+        return mode
 
 
 @loader.tds
@@ -122,7 +119,6 @@ class PurgeAllMessagesModule(loader.Module):
         """[target/all/me/reply] - Absolute room cleanup engine."""
         
         reply = event.content.relates_to.in_reply_to if event.content.relates_to else None
-        
         final_target = payload.target
         
         if reply and payload.target not in ("all", "*", "все", "всё"):
@@ -138,16 +134,13 @@ class PurgeAllMessagesModule(loader.Module):
         service = PurgeService(mx, event.room_id, mx.client.mxid)
         
         try:
-            targets = await service.collect_targets(
-                mode=final_target, 
-                exclude_id=event.event_id
+            deleted_count = await service.run(
+                mode=final_target,
+                exclude_id=event.event_id,
             )
-            
-            deleted_count = await service.execute(targets)
             await utils.answer(mx, self.strings["done"].format(
-                count=deleted_count, 
-                target=target_display
+                count=deleted_count,
+                target=target_display,
             ))
-            
         except Exception as e:
             raise e
