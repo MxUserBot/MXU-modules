@@ -14,6 +14,7 @@ class Meta:
     version = "2.0.0"
     tags = ["utility"]
     author = "https://github.com/PashaHatsune"
+    dependencies = ["googletrans"]
 
 
 from googletrans import Translator
@@ -24,7 +25,9 @@ from .. import loader
 @loader.tds
 class TranslatorModule(loader.Module):
     strings = {
-        "result": "<b><u>[Translator]</u></b><br><code>{result}</code>"
+        "result": "<b><u>[Translator]</u></b><br><code>{result}</code>",
+        "no_reply": "⚠️ <b>Failed to get reply:</b> no decryption key.",
+        "need_text": "❌ <b>Specify text or reply to a message.</b>"
     }
 
     @loader.command()
@@ -37,6 +40,13 @@ class TranslatorModule(loader.Module):
     ) -> None:
         """<lang> <lang: ru/ua/ja/etc> <text/reply> | Translate text"""
         
+        if not text:
+            text = await event.get_reply_text()
+        if text is None:
+            return await utils.answer(mx, self.strings["no_reply"], event=event)
+        if not text:
+            return await utils.answer(mx, self.strings["need_text"], event=event)
+
         async with Translator() as tr_obj:
             res = await tr_obj.translate(text, dest=lang)
-            await event.reply(self.strings.get("result").format(result=res.text))
+            await utils.answer(mx, self.strings["result"].format(result=res.text), event=event)

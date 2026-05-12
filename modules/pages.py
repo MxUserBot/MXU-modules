@@ -17,7 +17,8 @@ class Meta:
 
 from mautrix.types import MessageEvent
 from mxc import utils
-from mxc.utils.emoji import EmojiKeyBoard
+from mxc.types import EmojiButton
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
@@ -89,7 +90,7 @@ class PagesModule(loader.Module):
             await ctx.edit(pages_list[current])
 
         markup = EmojiKeyBoard(
-            rows=[[utils.EmojiButton(emoji="➡️", data="next")]],
+            rows=[[EmojiButton(emoji="➡️", data="next")]],
             callback=page_handler,
             data={"page": 0},
             remove_clicked=False,
@@ -122,8 +123,8 @@ class PagesModule(loader.Module):
 
         markup = EmojiKeyBoard(
             rows=[[
-                utils.EmojiButton(emoji="⬅️", data="prev"),
-                utils.EmojiButton(emoji="➡️", data="next"),
+                EmojiButton(emoji="⬅️", data="prev"),
+                EmojiButton(emoji="➡️", data="next"),
             ]],
             callback=on_click,
             data={"page": 0},
@@ -141,16 +142,15 @@ class PagesModule(loader.Module):
                     choice=utils.escape_html(str(ctx.payload)),
                 )
             )
-            await ctx.close(clear_reactions=True)
+            await ctx.close()
 
-        markup = utils.EmojiKeyBoard(
+        markup = EmojiKeyBoard(
             rows=[[
-                utils.EmojiButton(emoji="✅", data="yes"),
-                utils.EmojiButton(emoji="❌", data="no"),
-                utils.EmojiButton(emoji="🤔", data="later")
+                EmojiButton(emoji="✅", data="yes"),
+                EmojiButton(emoji="❌", data="no"),
+                EmojiButton(emoji="🤔", data="later")
             ]],
             callback=on_choice,
-            single_use=True
         )
 
         await utils.answer(mx, self.strings["choice"], event=event, reply_markup=markup)
@@ -163,15 +163,14 @@ class PagesModule(loader.Module):
                 await ctx.edit(self.strings["confirm_done"])
             else:
                 await ctx.edit(self.strings["confirm_cancelled"])
-            await ctx.close(clear_reactions=True)
+            await ctx.close()
 
         markup = EmojiKeyBoard(
             rows=[[
-                utils.EmojiButton(emoji="✅", data="yes"),
-                utils.EmojiButton(emoji="❌", data="no"),
+                EmojiButton(emoji="✅", data="yes"),
+                EmojiButton(emoji="❌", data="no"),
             ]],
             callback=on_confirm,
-            single_use=True,
         )
 
         await utils.answer(mx, self.strings["confirm_title"], event=event, reply_markup=markup)
@@ -183,18 +182,17 @@ class PagesModule(loader.Module):
             await ctx.edit(
                 self.strings["rating_result"].format(stars=ctx.payload),
             )
-            await ctx.close(clear_reactions=True)
+            await ctx.close()
 
         markup = EmojiKeyBoard(
             rows=[[
-                utils.EmojiButton(emoji="⭐", data=1),
-                utils.EmojiButton(emoji="⭐⭐", data=2),
-                utils.EmojiButton(emoji="⭐⭐⭐", data=3),
-                utils.EmojiButton(emoji="⭐⭐⭐⭐", data=4),
-                utils.EmojiButton(emoji="⭐⭐⭐⭐⭐", data=5),
+                EmojiButton(emoji="⭐", data=1),
+                EmojiButton(emoji="⭐⭐", data=2),
+                EmojiButton(emoji="⭐⭐⭐", data=3),
+                EmojiButton(emoji="⭐⭐⭐⭐", data=4),
+                EmojiButton(emoji="⭐⭐⭐⭐⭐", data=5),
             ]],
             callback=on_rate,
-            single_use=True,
         )
 
         await utils.answer(mx, self.strings["rating_title"], event=event, reply_markup=markup)
@@ -217,10 +215,10 @@ class PagesModule(loader.Module):
 
         markup = EmojiKeyBoard(
             rows=[[
-                utils.EmojiButton(emoji="🐍", data="Python"),
-                utils.EmojiButton(emoji="🦀", data="Rust"),
-                utils.EmojiButton(emoji="☕", data="Java"),
-                utils.EmojiButton(emoji="💧", data="Go"),
+                EmojiButton(emoji="🐍", data="Python"),
+                EmojiButton(emoji="🦀", data="Rust"),
+                EmojiButton(emoji="☕", data="Java"),
+                EmojiButton(emoji="💧", data="Go"),
             ]],
             callback=on_vote,
             remove_clicked=False,
@@ -250,15 +248,15 @@ class PagesModule(loader.Module):
 
             if action == "close":
                 await ctx.edit(self.strings["closed"])
-                await ctx.close(clear_reactions=True)
+                await ctx.close()
 
-        markup = utils.EmojiKeyBoard(
+        markup = EmojiKeyBoard(
             rows=[
                 [
-                    utils.EmojiButton(emoji="🔄", data={"action": "refresh"}),
-                    utils.EmojiButton(emoji="ℹ️", data={"action": "payload"}),
+                    EmojiButton(emoji="🔄", data={"action": "refresh"}),
+                    EmojiButton(emoji="ℹ️", data={"action": "payload"}),
                 ],
-                [utils.EmojiButton(emoji="🧹", data={"action": "close"})]
+                [EmojiButton(emoji="🧹", data={"action": "close"})]
             ],
             callback=on_action,
             data={"count": 0}

@@ -16,6 +16,8 @@ class Meta:
 
 
 from mxc import utils
+from mxc.types import EmojiButton
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
@@ -238,14 +240,13 @@ class RolePlayModule(loader.Module):
             if target.startswith("@"):
                 allowed.append(target)
 
-            markup = utils.EmojiKeyBoard(
+            markup = EmojiKeyBoard(
                 rows=[[
-                    utils.EmojiButton("✅", "yes"),
-                    utils.EmojiButton("❌", "no"),
+                    EmojiButton("✅", "yes"),
+                    EmojiButton("❌", "no"),
                 ]],
                 callback=on_confirm,
                 allowed_senders=allowed,
-                single_use=True,
             )
 
             await utils.answer(

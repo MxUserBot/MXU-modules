@@ -31,16 +31,24 @@ class YTMusicModule(loader.Module):
         "searching": "🔍 | <b>Searching:</b> <code>{query}</code>",
         "processing": "📥 | <b>Downloading...</b>",
         "error": "❌ <b>Error:</b> <code>{err}</code>",
-        "not_found": "❌ <b>Song not found.</b>"
+        "not_found": "❌ <b>Song not found.</b>",
+        "no_reply": "⚠️ <b>Failed to get reply:</b> no decryption key."
     }
 
     async def _run_yt_dlp(self, loop, ydl, query):
         return await loop.run_in_executor(None, lambda: ydl.extract_info(query, download=True))
 
     @loader.command()
-    async def ytm(self, mx, event, query: str):
+    async def ytm(self, mx, event, query: str = ""):
         """<query/link/reply> | Download audio from YouTube"""
         
+        if not query:
+            query = await event.get_reply_text()
+        if query is None:
+            return await utils.answer(mx, self.strings["no_reply"], event=event)
+        if not query:
+            return
+
         status_id = await utils.answer(mx, self.strings.get("searching").format(query=query))
 
         

@@ -115,11 +115,13 @@ class DemotivatorModule(loader.Module):
     strings = {
         "processing": "🖼 | <b>Constructing visual asset...</b>",
         "error": "❌ | <b>Deployment failure:</b> <code>{err}</code>",
-        "no_reply": "❌ | <b>Context required:</b> Reply to an image.",
+        "no_reply_img": "❌ | <b>Context required:</b> Reply to an image.",
         "font_err": "❌ <b>Resource error:</b> Strategic fonts not loaded.",
         "download_err": "❌ | <b>Media error:</b> Failed to download target.",
         "invalid_image": "❌ | <b>Media error:</b> Target must be a valid image.",
-        "font_render_err": "❌ | <b>Render error:</b> Font rendering subsystem failed."
+        "font_render_err": "❌ | <b>Render error:</b> Font rendering subsystem failed.",
+        "no_reply": "⚠️ <b>Failed to get reply:</b> no decryption key.",
+        "need_format": "❌ <b>Specify text in format:</b> <code>text | caption</code>"
     }
 
 
@@ -139,12 +141,22 @@ class DemotivatorModule(loader.Module):
         self,
         mx,
         event: MessageEvent,
-        text: DemotPayload
+        text: str = ""
     ):
         """<top | bottom> | Generate high-fidelity demotivator using pipe separation"""
         
         if not self._font_data:
             raise UsageError(self.strings["font_err"])
+
+        if not text:
+            text = await event.get_reply_text()
+        if text is None:
+            return await utils.answer(mx, self.strings["no_reply"], event=event)
+        if not text:
+            return await utils.answer(mx, self.strings["need_format"], event=event)
+
+        payload = DemotPayload(text)
+
 
         reply_id = event.content.get_reply_to()
 
@@ -163,7 +175,7 @@ class DemotivatorModule(loader.Module):
             result = await asyncio.to_thread(
                 DemotivatorEngine.render,
                 img_bytes, 
-                text, 
+                payload, 
                 self._font_data,
                 self.strings
             )

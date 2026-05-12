@@ -16,7 +16,8 @@ class Meta:
 
 
 from mxc import utils
-from mxc.types import Image
+from mxc.types import EmojiButton, Image
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
@@ -38,7 +39,6 @@ class AstolfoModule(loader.Module):
     ):
         """<rating> - Summon a random Astolfo picture"""
 
-
         ids = await utils.answer(mx, self.strings.get("fetching"))
 
         api_url = "https://astolfo.rocks/api/images/random"
@@ -50,21 +50,49 @@ class AstolfoModule(loader.Module):
             ext = data["file_extension"]
             img_url = f"https://astolfo.rocks/astolfo/{img_id}.{ext}"
 
+            async def on_reload(ctx):
+                try:
+                    new_data = await utils.request(api_url, params={"rating": rating.lower()})
+                    new_id = new_data["id"]
+                    new_ext = new_data["file_extension"]
+                    new_url = f"https://astolfo.rocks/astolfo/{new_id}.{new_ext}"
 
-            image_bytes = await utils.request(
-                url=img_url,
-                return_type="bytes"
+                    markup = EmojiKeyBoard(
+                        rows=[[EmojiButton(emoji="🔄", data="reload")]],
+                        callback=on_reload
+                    )
+
+                    await ctx.close()
+                    await utils.answer(
+                        ctx.mx,
+                        media=Image(
+                            url=new_url,
+                            caption=self.strings.get("caption").format(id=new_id, rating=rating),
+                            filename="astolfo.png",
+                            mimetype="image/png"
+                        ),
+                        edit_id=ctx.message_id,
+                        reply_markup=markup,
+                    )
+                except Exception:
+                    pass
+
+            markup = EmojiKeyBoard(
+                rows=[[EmojiButton(emoji="🔄", data="reload")]],
+                callback=on_reload,
+                remove_clicked=False,
             )
 
             await utils.answer(
                 mx,
                 media=Image(
-                    url=image_bytes,
+                    url=img_url,
                     caption=self.strings.get("caption").format(id=img_id, rating=rating),
                     filename="astolfo.png",
                     mimetype="image/png"
                 ),
-                edit_id=ids
+                edit_id=ids,
+                reply_markup=markup,
             )
 
         except Exception as e:

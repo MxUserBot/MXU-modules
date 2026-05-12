@@ -18,7 +18,8 @@ class Meta:
 
 from mxc import utils
 from mxc.exceptions import UsageError
-from mxc.types import Image
+from mxc.types import EmojiButton, Image
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
@@ -47,20 +48,44 @@ class CatGirlModule(loader.Module):
             img_url = data["image"]["original"]["url"]
             img_id = data["id"]
 
+            async def on_reload(ctx):
+                try:
+                    new_data = await utils.request(api_url)
+                    new_url = new_data["image"]["original"]["url"]
+                    new_id = new_data["id"]
 
-            image_bytes = await utils.request(
-                url=img_url,
-                return_type="bytes"
+                    markup = EmojiKeyBoard(
+                        rows=[[EmojiButton(emoji="🔄", data="reload")]],
+                        callback=on_reload
+                    )
+
+                    await ctx.close()
+                    await utils.answer(
+                        ctx.mx,
+                        media=Image(
+                            url=new_url,
+                            caption=self.strings.get("caption").format(id=new_id)
+                        ),
+                        edit_id=ctx.message_id,
+                        reply_markup=markup,
+                    )
+                except Exception:
+                    pass
+
+            markup = EmojiKeyBoard(
+                rows=[[EmojiButton(emoji="🔄", data="reload")]],
+                callback=on_reload,
+                remove_clicked=False,
             )
 
             await utils.answer(
                 mx,
                 media=Image(
-                    url=image_bytes,
+                    url=img_url,
                     caption=self.strings.get("caption").format(id=img_id)
                 ),
-                edit_id=ids
-
+                edit_id=ids,
+                reply_markup=markup,
             )
 
         except (TypeError, KeyError, IndexError):

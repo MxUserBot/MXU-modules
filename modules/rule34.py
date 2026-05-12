@@ -16,7 +16,6 @@ class Meta:
     author = "https://github.com/PashaHatsune"
 
 
-import random
 import asyncio
 from typing import Dict, Optional
 
@@ -24,7 +23,8 @@ from pydantic import BaseModel
 from mautrix.types import MessageEvent
 
 from mxc import utils
-from mxc.types import Image
+from mxc.types import EmojiButton, Image
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
@@ -42,17 +42,17 @@ class Rule34Config(BaseModel):
 
 class Rule34Engine:
     @staticmethod
-    async def fetch_random_post(
+    async def fetch_posts(
         tags: Optional[str], 
         auth: Rule34Config, 
         strings: Dict[str, str]
-    ) -> str:
+    ) -> list[str]:
         params = {
             "page": "dapi",
             "s": "post",
             "q": "index",
             "tags": tags or "",
-            "limit": 20, # Fetch more to increase entropy
+            "limit": 20,
             "json": 1,
             "user_id": auth.user_id,
             "api_key": auth.api_key
@@ -67,11 +67,15 @@ class Rule34Engine:
             if not data or not isinstance(data, list):
                 raise ValueError(strings["no_results"])
 
-            urls = [item["file_url"] for item in data if "file_url" in item]
+            _IMAGE_EXTS = {"jpg", "jpeg", "png", "webp"}
+            urls = [
+                item["file_url"] for item in data
+                if "file_url" in item and item["file_url"].lower().rsplit(".", 1)[-1] in _IMAGE_EXTS
+            ]
             if not urls:
                 raise ValueError(strings["no_results"])
 
-            return random.choice(urls)
+            return urls
 
         except Exception as e:
             if str(e) == strings["no_results"]:
@@ -109,29 +113,73 @@ class Rule34Module(loader.Module):
         self,
         mx,
         event: MessageEvent, 
-        tags: str = ""
+        tags: str = None
     ) -> None:
-        """<tags> | Fetch a random image from Rule34"""
+        """<tags> | Fetch images from Rule34"""
+
         try:
             auth = Rule34Config.from_raw(self.config["api_key"])
         except ValueError:
             return await utils.answer(mx, self.strings["config_err"])
 
         try:
-            url = await Rule34Engine.fetch_random_post(tags, auth, self.strings)
+            urls = await Rule34Engine.fetch_posts(tags, auth, self.strings)
 
-            await utils.answer(mx, self.strings["warning"])
+            warn_id = await utils.answer(mx, self.strings["warning"])
             await asyncio.sleep(self.config["safety_delay"])
+
+            async def on_page(ctx):
+                page = ctx.data["page"]
+                if ctx.payload == "prev":
+                    page = (page - 1) % len(urls)
+                else:
+                    page = (page + 1) % len(urls)
+                ctx.data["page"] = page
+
+                markup = EmojiKeyBoard(
+                    rows=[[
+                        EmojiButton(emoji="⬅️", data="prev"),
+                        EmojiButton(emoji="➡️", data="next"),
+                    ]],
+                    callback=on_page,
+                    data=ctx.data,
+                    allowed_senders=ctx.sender,
+                    remove_clicked=False,
+                )
+
+                await ctx.close()
+                await utils.answer(
+                    ctx.mx,
+                    media=Image(
+                        url=urls[page],
+                        caption=self.strings["used_tag"].format(
+                            tag=utils.escape_html(tags or "none"),
+                        ),
+                    ),
+                    edit_id=ctx.message_id,
+                    reply_markup=markup,
+                )
+
+            markup = EmojiKeyBoard(
+                rows=[[
+                    EmojiButton(emoji="⬅️", data="prev"),
+                    EmojiButton(emoji="➡️", data="next"),
+                ]],
+                callback=on_page,
+                data={"page": 0},
+                remove_clicked=False,
+            )
 
             await utils.answer(
                 mx,
                 media=Image(
-                    url=url,
+                    url=urls[0],
                     caption=self.strings["used_tag"].format(
                         tag=utils.escape_html(tags or "none"),
                     ),
                 ),
-                event=event,
+                edit_id=warn_id,
+                reply_markup=markup,
             )
 
         except Exception as e:
