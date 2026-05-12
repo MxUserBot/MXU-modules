@@ -1,4 +1,16 @@
 {
+  "SaveDeleteMessages": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/SaveDeleteMessages.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "security",
+      "utility"
+    ],
+    "name": "SaveDeleteMessages",
+    "description": "Saving deleted messages. Use this module with caution, because you might get punched in the face for saving deleted messages. :)",
+    "version": "1.0.8"
+  },
   "afk": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/afk.py",
     "author": "Unknown",
