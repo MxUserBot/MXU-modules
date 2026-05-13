@@ -29,6 +29,7 @@ from mautrix.types import MessageEvent
 
 from mxc import utils
 from .. import loader
+from mxc.types import Sticker
 
 
 class TGPackPayload(BaseModel):
@@ -227,7 +228,10 @@ class TGStickerPortModule(loader.Module):
         "proxy": loader.ConfigValue(
             default="",
             description="Proxy URL for Telegram API (e.g. http://127.0.0.1:1080). Leave empty if not needed.",
-            required=False,
+        ),
+        "preview_after_import": loader.ConfigValue(
+            default=True,
+            description="Send first 3 stickers as preview after successful import",
         )
     }
 
@@ -283,12 +287,28 @@ class TGStickerPortModule(loader.Module):
             )
 
             await utils.answer(
-                mx,
-                self.strings["done"].format(
-                    count=len(items)
-                ),
-                edit_id=status_id
-            )
+                 mx,
+                 self.strings["done"].format(
+                     count=len(items)
+                 ),
+                 edit_id=status_id
+             )
+
+            if self.config.get("preview_after_import"):
+                 for item in items[:3]:
+                     await utils.answer(
+                         mx,
+                         media=Sticker(
+                             url=item.mxc_url,
+                             w=item.width,
+                             h=item.height,
+                             mimetype="image/webp",
+                             size=item.size
+                         ),
+                         edit_id=None
+                     )
+                    
+                 await utils.answer(mx, f"<b>TG: {title}</b>")
 
         except Exception as e:
             raise e

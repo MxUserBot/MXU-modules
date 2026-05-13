@@ -17,8 +17,11 @@ class Meta:
     dependencies = ["googletrans"]
 
 
+from typing import Optional
+
 from googletrans import Translator
 from mxc import utils
+from mxc.exceptions import UsageError
 from .. import loader
 
 
@@ -36,16 +39,29 @@ class TranslatorModule(loader.Module):
         mx,
         event,
         lang: str = "en",
-        text: str = None
+        text: Optional[str] = None
     ) -> None:
-        """<lang> <lang: ru/ua/ja/etc> <text/reply> | Translate text"""
+        """<lang> <lang: ru/ua/ja/etc> <text/reply/eid> | Translate text"""
         
+        if text and text.startswith("$"):
+            try:
+                ctx = await utils.get_context_events(mx, event.room_id, text, limit=0)
+                if ctx:
+                    text = getattr(ctx[-1].content, "body", None)
+                if not text:
+                    raise UsageError("❌ <b>Could not decrypt message.</b>")
+            except UsageError:
+                raise
+            except Exception:
+                raise UsageError("❌ <b>Could not fetch message.</b>")
+
         if not text:
-            text = await event.get_reply_text()
-        if text is None:
-            return await utils.answer(mx, self.strings["no_reply"], event=event)
+            reply_evt = await utils.get_reply_event(mx, event)
+            if reply_evt:
+                text = getattr(reply_evt.content, "body", None)
+
         if not text:
-            return await utils.answer(mx, self.strings["need_text"], event=event)
+            raise UsageError(self.strings["need_text"])
 
         async with Translator() as tr_obj:
             res = await tr_obj.translate(text, dest=lang)

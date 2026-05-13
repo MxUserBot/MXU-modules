@@ -156,7 +156,7 @@
     ],
     "name": "Quote",
     "description": "Element-style quotes",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "quotecard": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quotecard.py",
@@ -310,20 +310,5 @@
     "name": "ImagePacks",
     "description": "MSC2545 image packs: emotes, stickers, global sync",
     "version": "2.0.0"
-  },
-  "tgbridge": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/tgbridge.zip",
-    "author": "@pasha:pashahatsune.pp.ua",
-    "dependencies": [
-      "telethon"
-    ],
-    "tags": [
-      "bridge",
-      "telegram",
-      "matrix"
-    ],
-    "name": "TelegramBridge",
-    "description": "Telegram bridge with multi-account sync, Matrix Spaces and helper account bootstrap.",
-    "version": "4.0.0"
   }
 }

@@ -11,7 +11,7 @@
 class Meta:
     name = "Quote"
     description = "Element-style quotes"
-    version = "2.2.0"
+    version = "2.3.0"
     tags = ["image", "media"]
     dependencies = ["pillow"]
     author = "https://github.com/PashaHatsune"
@@ -23,13 +23,18 @@ import textwrap
 from typing import Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict
-from mautrix.types import MessageEvent
+from mautrix.types import MessageEvent, MessageType
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from mxc import utils
 from mxc.exceptions import UsageError
 from mxc.types import Image as MXImage
 from .. import loader
+
+
+MEDIA_TYPES = frozenset({
+    MessageType.IMAGE, MessageType.VIDEO, MessageType.STICKER,
+})
 
 
 class QuoteEntry(BaseModel):
@@ -39,11 +44,16 @@ class QuoteEntry(BaseModel):
     avatar_bytes: Optional[bytes] = None
     nested_name: Optional[str] = None
     nested_text: Optional[str] = None
+    media_bytes: Optional[bytes] = None
 
 
 class QuoteEngine:
     MAX_W, MIN_W, X_OFFSET, PADDING = 600, 200, 75, 18
     SEP_GAP = 8
+
+    @classmethod
+    def _avail_media_w(cls, final_w):
+        return max(1, final_w - cls.X_OFFSET - cls.PADDING - 10)
 
     @classmethod
     def _measure(cls, tmp_draw, entries, f_name, f_text, f_reply_name, f_reply_text):
@@ -75,6 +85,16 @@ class QuoteEngine:
             entry_heights.append(h)
 
         final_w = max(cls.MIN_W, min(content_w + cls.X_OFFSET + cls.PADDING, cls.MAX_W))
+
+        for i, entry in enumerate(entries):
+            if entry.media_bytes:
+                try:
+                    img = Image.open(io.BytesIO(entry.media_bytes))
+                    ratio = min(cls._avail_media_w(final_w) / img.width, 1)
+                    entry_heights[i] += int(img.height * ratio) + 6
+                except Exception:
+                    pass
+
         total_h = cls.PADDING + sum(entry_heights) + cls.SEP_GAP * (len(entries) - 1) + cls.PADDING
 
         return final_w, total_h, entry_heights
@@ -131,6 +151,19 @@ class QuoteEngine:
                 draw.text((cls.X_OFFSET, inner_y), line, font=f_text, fill=(225, 225, 225, 255))
                 inner_y += 22
 
+            if entry.media_bytes:
+                try:
+                    media_img = Image.open(io.BytesIO(entry.media_bytes)).convert("RGBA")
+                    avail_w = cls._avail_media_w(final_w)
+                    display_w = min(media_img.width, avail_w)
+                    ratio = display_w / media_img.width
+                    display_h = int(media_img.height * ratio)
+                    media_img = media_img.resize((display_w, display_h), Image.LANCZOS)
+                    canvas.alpha_composite(media_img, (cls.X_OFFSET, inner_y))
+                    inner_y += display_h + 6
+                except Exception:
+                    pass
+
             curr_y += entry_heights[i]
 
             if i < len(entries) - 1:
@@ -150,7 +183,6 @@ class QuoteModule(loader.Module):
         "no_reply": "❌ <b>Context required:</b> Reply to a message.",
         "font_err": "❌ <b>Resource error:</b> Typography assets not loaded.",
         "font_render_err": "❌ <b>Engine error:</b> Font rasterization failed.",
-        "invalid_image": "❌ <b>Media error:</b> Failed to process avatar.",
         "no_quoteable": "❌ <b>No quoteable messages found.</b>"
     }
 
@@ -172,14 +204,25 @@ class QuoteModule(loader.Module):
             sender = evt.sender
             name = (await mx.client.get_displayname(sender)) or sender
             avatar_url = await mx.client.get_avatar_url(sender)
-            text = getattr(evt.content, "body", "") or " "
+            content = evt.content
+            msgtype = getattr(content, "msgtype", None)
+            text = getattr(content, "body", "") or " "
+            if msgtype in MEDIA_TYPES:
+                text = " "
 
             nested_name = None
             nested_text = None
             nested_event = await utils.get_reply_event(mx, evt)
             if nested_event:
                 nested_name = (await mx.client.get_displayname(nested_event.sender)) or "User"
-                nested_text = (getattr(nested_event.content, "body", "") or "(media)").replace("\n", " ")
+                nested_text = (getattr(nested_event.content, "body", "") or "").replace("\n", " ")
+                if not nested_text:
+                    nested_text = "(media)"
+                nested_msgtype = getattr(nested_event.content, "msgtype", None)
+                if nested_msgtype == MessageType.VIDEO:
+                    nested_text = "(video)"
+                elif nested_msgtype in (MessageType.IMAGE, MessageType.STICKER):
+                    nested_text = "(image)"
 
             av_bytes = None
             if avatar_url:
@@ -188,12 +231,25 @@ class QuoteModule(loader.Module):
                 except:
                     pass
 
+            media_bytes = None
+            if msgtype == MessageType.VIDEO:
+                media_bytes = await utils.download_message_thumbnail(mx, evt)
+            elif msgtype in (MessageType.IMAGE, MessageType.STICKER):
+                media_bytes = await utils.download_message_thumbnail(mx, evt)
+                if not media_bytes:
+                    try:
+                        data, *_ = await utils.download_message_media(mx, evt)
+                        media_bytes = data
+                    except Exception:
+                        pass
+
             return QuoteEntry(
                 sender_name=name,
                 text=text,
                 avatar_bytes=av_bytes,
                 nested_name=nested_name,
                 nested_text=nested_text,
+                media_bytes=media_bytes,
             )
         except Exception:
             return None
@@ -212,10 +268,12 @@ class QuoteModule(loader.Module):
             except ValueError:
                 count = 1
 
-        status_id = await utils.answer(mx, self.strings["processing"])
-
         reply = await utils.get_reply_event(mx, event)
 
+        if not reply:
+            raise UsageError(self.strings["no_reply"])
+
+        status_id = await utils.answer(mx, self.strings["processing"])
 
         entries = []
 
@@ -237,6 +295,8 @@ class QuoteModule(loader.Module):
                 if entry:
                     entries.append(entry)
 
+        if not entries:
+            raise UsageError(self.strings["no_quoteable"])
 
         result, width, height = await asyncio.to_thread(
             QuoteEngine.render,
