@@ -118,7 +118,7 @@
     ],
     "name": "ChatMassacre",
     "description": "leaver chats",
-    "version": "3.1.0"
+    "version": "3.2.0"
   },
   "pages": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/pages.py",
@@ -271,6 +271,18 @@
     "name": "Translator",
     "description": "google translator",
     "version": "2.0.0"
+  },
+  "voice": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/voice.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "voice",
+      "ai"
+    ],
+    "name": "VoiceTranscriber",
+    "description": "Transcribe voice messages with OpenAI Whisper",
+    "version": "1.0.0"
   },
   "wather": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/wather.py",

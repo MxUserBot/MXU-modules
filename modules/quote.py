@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from mxc import utils
 from mxc.exceptions import UsageError
-from mxc.types import Image as MXImage
+from mxc.types import DownloadMeta, Image as MXImage
 from .. import loader
 
 
@@ -227,18 +227,18 @@ class QuoteModule(loader.Module):
             av_bytes = None
             if avatar_url:
                 try:
-                    av_bytes = await mx.client.download_media(avatar_url)
+                    av_bytes = await utils.download(mx, meta=DownloadMeta(url=avatar_url))
                 except:
                     pass
 
             media_bytes = None
             if msgtype == MessageType.VIDEO:
-                media_bytes = await utils.download_message_thumbnail(mx, evt)
+                media_bytes = await utils.download(mx, meta=DownloadMeta(url=evt, thumbnail=True))
             elif msgtype in (MessageType.IMAGE, MessageType.STICKER):
-                media_bytes = await utils.download_message_thumbnail(mx, evt)
+                media_bytes = await utils.download(mx, meta=DownloadMeta(url=evt, thumbnail=True))
                 if not media_bytes:
                     try:
-                        data, *_ = await utils.download_message_media(mx, evt)
+                        data, *_ = await utils.download(mx, meta=DownloadMeta(url=evt))
                         media_bytes = data
                     except Exception:
                         pass

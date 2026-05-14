@@ -153,10 +153,10 @@ class TGStickerEngine:
                     is_video
                 )
 
-                mxc_url = await mx.client.upload_media(
-                    data=processed_bytes,
+                mxc_url = await utils.upload(
+                    mx,
+                    processed_bytes,
                     mime_type="image/webp",
-                    filename=f"s_{uuid.uuid4().hex[:8]}.webp",
                 )
 
                 return StickerItem(

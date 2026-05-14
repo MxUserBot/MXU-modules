@@ -126,18 +126,13 @@ class TikTokDLModule(loader.Module):
             await utils.answer(mx, self.strings["processing"], edit_id=status_id)
             final_video = await TikTokEngine.transcode_video(video_bytes, self.strings)
 
-            await utils.answer(mx, self.strings["uploading"], edit_id=status_id)
-            mxc = await mx.client.upload_media(final_video, mime_type="video/mp4")
-
             await utils.answer(
-                mx, 
+                mx,
                 media=Video(
-                    url=mxc,
-                    mimetype="video/mp4", 
-                    size=len(final_video),
+                    url=final_video,
+                    mimetype="video/mp4",
                     w=600,
-                    h=900
-
+                    h=900,
                 ),
                 edit_id=status_id
             )

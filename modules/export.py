@@ -16,9 +16,13 @@ class Meta:
     author = "https://github.com/PashaHatsune"
 
 
+from pathlib import Path
+
 import math
+import os
 import uuid
 import asyncio
+import tempfile
 import zipfile
 from collections import Counter
 from datetime import datetime
@@ -29,7 +33,7 @@ from mautrix.types import MessageEvent, EventType
 from mautrix.errors import MNotFound
 
 from mxc import utils
-from mxc.types import Document
+from mxc.types import Document, DownloadMeta
 from .. import loader
 
 
@@ -264,8 +268,7 @@ class ExportService:
         return "".join(html)
 
     async def build_zip(self, events: List[dict], members: Dict[str, Any], per_page: int):
-        zip_filename = f"chat_export_{uuid.uuid4().hex[:8]}.zip"
-        zip_path = utils._get_safe_path(zip_filename)
+        zip_path = Path(tempfile.gettempdir()) / f"chat_export_{uuid.uuid4().hex[:8]}.zip"
         
         avatars_map = {}
         media_map = {}
@@ -321,7 +324,7 @@ class ExportService:
                 member = members.get(sender)
                 if member and member.avatar_url:
                     try:
-                        data = await self.mx.client.download_media(member.avatar_url)
+                        data = await utils.download(self.mx, meta=DownloadMeta(url=member.avatar_url))
                         clean_sender = "".join(c for c in sender if c.isalnum())
                         fname = f"assets/avatars/{clean_sender}.png"
                         zf.writestr(fname, data)
@@ -340,7 +343,7 @@ class ExportService:
                 )
                 zf.writestr(f"messages_{p}.html", html.encode('utf-8'))
                 
-        return zip_filename, zip_path
+        return zip_path
 
 
 @loader.tds
@@ -361,7 +364,7 @@ class ChatExportModule(loader.Module):
         status_id = await utils.answer(mx, self.strings["fetching"], event=event)
         
         service = ExportService(mx, target_room)
-        zip_filename = None
+        zip_path = None
         
         try:
             events = await service.fetch_history(limit=payload.limit)
@@ -370,35 +373,19 @@ class ChatExportModule(loader.Module):
                 return
                 
             members = await service.get_members()
-            zip_filename, zip_path = await service.build_zip(events, members, payload.per_page)
+            zip_path = await service.build_zip(events, members, payload.per_page)
             
             await utils.answer(mx, self.strings["uploading"], edit_id=status_id)
             
-            # Получаем размер файла безопасно через pathlib
-            file_size = zip_path.stat().st_size
-            
-            async def file_generator(path):
-                with open(path, "rb") as f:
-                    while True:
-                        chunk = await asyncio.to_thread(f.read, 1024 * 1024 * 2)
-                        if not chunk:
-                            break
-                        yield chunk
-            
-            mxc_url = await mx.client.upload_media(
-                data=file_generator(zip_path),
-                mime_type="application/zip",
-                filename="ChatExport.zip"
-            )
+            file_bytes = await asyncio.to_thread(zip_path.read_bytes)
 
             await utils.answer(
                 mx,
                 media=Document(
-                    url=mxc_url,
+                    url=file_bytes,
                     mimetype="application/zip",
-                    size=file_size,
                     filename="ChatExport.zip",
-                    caption=self.strings["done"].format(count=len(events))
+                    caption=self.strings["done"].format(count=len(events)),
                 ),
                 edit_id=status_id
             )
@@ -406,6 +393,8 @@ class ChatExportModule(loader.Module):
         except Exception as e:
             await utils.answer(mx, self.strings["error"].format(err=str(e)), edit_id=status_id)
         finally:
-            # Безопасное удаление файла через utils 
-            if zip_filename:
-                await utils.safe_remove(zip_filename)
+            if zip_path:
+                try:
+                    os.unlink(zip_path)
+                except Exception:
+                    pass

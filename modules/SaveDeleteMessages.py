@@ -8,6 +8,8 @@
 # 🌐 https://www.gnu.org/licenses/agpl-3.0.html
 
 import time
+from datetime import datetime, timezone
+
 from mautrix.types import EventType, MessageType
 from mxc import utils
 from .. import loader
@@ -25,7 +27,7 @@ class SaveDeleteMessagesModule(loader.Module):
     """Module for intercepting and restoring deleted messages."""
 
     strings = {
-"redacted": "🗑 | <b>Message deleted!</b><br><br>📍 | <b>From chat:</b> <a href='https://matrix.to/#/{room}'><code>{room}</code></a><br>👤 | <b>Sender:</b> <a href='https://matrix.to/#/{user}'><code>{user}</code></a><br>💬 | <b>Text:</b><br><blockquote>{text}</blockquote>",        "cfg_ttl": "How many hours to store message history in the database?",
+"redacted": "🗑 | <b>Message deleted!</b><br><br>📍 | <b>From chat:</b> <a href='https://matrix.to/#/{room}'><code>{room}</code></a><br>👤 | <b>Sender:</b> <a href='https://matrix.to/#/{user}'><code>{user}</code></a><br>🕐 | <b>Sent:</b> <code>{sent}</code><br>🗑 | <b>Deleted:</b> <code>{deleted}</code><br>💬 | <b>Text:</b><br><blockquote>{text}</blockquote>",        "cfg_ttl": "How many hours to store message history in the database?",
         "cfg_watch_rooms": "WHERE TO WATCH: 'all' (all chats) or a comma-separated list of !room_ids.",
         "cfg_log_dest": "WHERE TO SEND: 'log' (system log room), 'current' (same chat), or !room_id.",
     }
@@ -58,7 +60,7 @@ class SaveDeleteMessagesModule(loader.Module):
         data = {
             "u": str(event.sender),
             "t": event.content.body,
-            "ts": int(time.time()),
+            "ts": event.timestamp,
             "r": str(event.room_id)
         }
         
@@ -72,9 +74,22 @@ class SaveDeleteMessagesModule(loader.Module):
         if not cached:
             return
 
+        sent_ts = cached.get("ts", 0)
+        sent_str = (
+            datetime.fromtimestamp(sent_ts / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            if sent_ts else "Unknown"
+        )
+        del_ts = event.timestamp
+        del_str = (
+            datetime.fromtimestamp(del_ts / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            if del_ts else "Unknown"
+        )
+
         text = self.strings["redacted"].format(
             room=cached.get("r", "Unknown"),
             user=cached["u"],
+            sent=sent_str,
+            deleted=del_str,
             text=utils.escape_html(cached["t"])
         )
 

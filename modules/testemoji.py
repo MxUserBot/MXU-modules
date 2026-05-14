@@ -52,7 +52,7 @@ class TestEmojiModule(loader.Module):
         for sc, (b64, mime) in BASE_EMOJI.items():
             try:
                 data = base64.b64decode(b64)
-                mxc = await mx.client.upload_media(data, mime_type=mime)
+                mxc = await utils.upload(mx, data, mime_type=mime)
                 self._emoji_cache[sc] = str(mxc)
             except Exception:
                 pass

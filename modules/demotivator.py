@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from mxc import utils
 from mxc.exceptions import UsageError
+from mxc.types import DownloadMeta
 from mxc.types import Image as MXImage
 from .. import loader
 
@@ -168,7 +169,7 @@ class DemotivatorModule(loader.Module):
             if target.content.msgtype != MessageType.IMAGE:
                 raise ValueError(self.strings["invalid_image"])
 
-            img_bytes = await mx.client.download_media(target.content.url)
+            img_bytes = await utils.download(mx, meta=DownloadMeta(url=target.content.url))
             if not img_bytes:
                 raise ValueError(self.strings["download_err"])
 
