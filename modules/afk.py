@@ -4,7 +4,8 @@ from mautrix.types import EventType, MessageEvent
 
 from pydantic import Field
 
-from ..core import loader, utils
+from ..core import loader
+from mxc import utils
 
 class Meta:
     name = "AFK"
@@ -37,13 +38,13 @@ class AFKModule(loader.Module):
         self.config.set("enabled", True)
         self.config.set("reason", status)
 
-        await event.reply(self.strings.get("afk_on").format(reason=status))
+        await utils.answer(mx, self.strings.get("afk_on").format(reason=status))
 
     @loader.command()
     async def unafk(self, mx, event):
         """Disable AFK mode"""
         self.config.set("enabled", False)
-        await event.reply(self.strings.get("afk_off"))
+        await utils.answer(mx, self.strings.get("afk_off"))
 
     @loader.on(EventType.ROOM_MESSAGE)
     async def afk_handler(self, mx, event: MessageEvent):
@@ -61,6 +62,7 @@ class AFKModule(loader.Module):
             return
         
         self._last_reply_times[event.room_id] = time.time()
-        await event.reply(
+        await utils.answer(
+            mx.
             self.strings.get("afk_reply").format(reason=self.config["reason"])
         )
