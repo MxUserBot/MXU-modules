@@ -13,7 +13,7 @@ class Meta:
     description = "demotivator generator."
     version = "4.1.0"
     tags = ["image", "media"]
-    dependencies = ["pillow", "telethon"]
+    dependencies = ["pillow"]
     author = "https://github.com/PashaHatsune"
 
 
@@ -31,6 +31,7 @@ from mxc.exceptions import UsageError
 from mxc.types import DownloadMeta
 from mxc.types import Image as MXImage
 from .. import loader
+from ..core import utils as cutils
 
 
 class DemotPayload(BaseModel):
@@ -129,8 +130,13 @@ class DemotivatorModule(loader.Module):
     async def _matrix_start(self, mx):
         self._font_data: Optional[bytes] = None
         try:
-            url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf"
-            self._font_data = await utils.request(url, return_type="bytes")
+            font_path = cutils.get_data_path() / "Roboto-Regular.ttf"
+            if font_path.exists():
+                self._font_data = font_path.read_bytes()
+            else:
+                url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf"
+                self._font_data = await utils.request(url, return_type="bytes")
+                font_path.write_bytes(self._font_data)
             if self._font_data:
                 self.logger.info("Font data successfully loaded into memory.")
         except Exception as e:
@@ -156,47 +162,34 @@ class DemotivatorModule(loader.Module):
         if not text:
             return await utils.answer(mx, self.strings["need_format"], event=event)
 
-        payload = DemotPayload(text)
-
-
-        reply_id = event.content.get_reply_to()
-
+        payload = DemotPayload.model_validate(text)
 
         status_id = await utils.answer(mx, self.strings["processing"])
 
-        try:
-            target = await mx.client.get_event(event.room_id, reply_id)
-            if target.content.msgtype != MessageType.IMAGE:
-                raise ValueError(self.strings["invalid_image"])
 
-            img_bytes = await utils.download(mx, meta=DownloadMeta(url=target.content.url))
-            if not img_bytes:
-                raise ValueError(self.strings["download_err"])
+        reply = await utils.get_reply_event(mx, event)
+        if not reply:
+            raise UsageError(self.strings["no_reply"])
 
-            result = await asyncio.to_thread(
-                DemotivatorEngine.render,
-                img_bytes, 
-                payload, 
-                self._font_data,
-                self.strings
-            )
+        d = await utils.download(mx, meta=DownloadMeta(url=reply))
+        img_bytes = d.url if d else None
+        if not img_bytes:
+            raise ValueError(self.strings["download_err"])
 
-            await utils.answer(
-                mx,
-                media=MXImage(
-                    url=result,
-                    filename="demot.jpg",
-                    mimetype="image/jpeg",
-                ),
-            )
-            await mx.client.redact(event.room_id, status_id)
+        result = await asyncio.to_thread(
+            DemotivatorEngine.render,
+            img_bytes, 
+            payload, 
+            self._font_data,
+            self.strings
+        )
 
-        except Exception as e:
-            self.logger.error(f"Pipeline error: {e}", exc_info=True)
-            
-            err_msg = str(e)
-            if err_msg not in self.strings.values():
-                err_msg = self.strings["error"].format(err=err_msg)
-            
-            await utils.answer(mx, err_msg, edit_id=status_id)
-            raise RuntimeError(err_msg) from e
+        await utils.answer(
+            mx,
+            media=MXImage(
+                url=result,
+                filename="demot.jpg",
+                mimetype="image/jpeg",
+            ),
+            edit_id=status_id
+        )

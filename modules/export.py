@@ -315,10 +315,8 @@ class ExportService:
             "flavor_text": flavor
         }
         
-        # --- Создание архива ---
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             
-            # Скачиваем аватарки
             unique_senders = set(e.get("sender") for e in events if e.get("sender"))
             for sender in unique_senders:
                 member = members.get(sender)
@@ -332,7 +330,6 @@ class ExportService:
                     except Exception: 
                         pass
 
-            # Генерируем HTML страницы
             total_pages = math.ceil(len(events) / per_page) or 1
             for p in range(1, total_pages + 1):
                 start_idx = (p - 1) * per_page

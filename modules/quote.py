@@ -30,6 +30,7 @@ from mxc import utils
 from mxc.exceptions import UsageError
 from mxc.types import DownloadMeta, Image as MXImage
 from .. import loader
+from ..core import utils as cutils
 
 
 MEDIA_TYPES = frozenset({
@@ -189,11 +190,23 @@ class QuoteModule(loader.Module):
     async def _matrix_start(self, mx):
         self._fonts = {}
         try:
-            reg_url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf"
-            bold_url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Bold.ttf"
+            data_path = cutils.get_data_path()
+            reg_path = data_path / "Roboto-Regular.ttf"
+            bold_path = data_path / "Roboto-Bold.ttf"
 
-            self._fonts["regular"] = await utils.request(reg_url, return_type="bytes")
-            self._fonts["bold"] = await utils.request(bold_url, return_type="bytes")
+            if reg_path.exists():
+                self._fonts["regular"] = reg_path.read_bytes()
+            else:
+                reg_url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf"
+                self._fonts["regular"] = await utils.request(reg_url, return_type="bytes")
+                reg_path.write_bytes(self._fonts["regular"])
+
+            if bold_path.exists():
+                self._fonts["bold"] = bold_path.read_bytes()
+            else:
+                bold_url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Bold.ttf"
+                self._fonts["bold"] = await utils.request(bold_url, return_type="bytes")
+                bold_path.write_bytes(self._fonts["bold"])
 
             self.logger.info("Typography assets successfully buffered in memory.")
         except Exception as e:
@@ -205,24 +218,28 @@ class QuoteModule(loader.Module):
             name = (await mx.client.get_displayname(sender)) or sender
             avatar_url = await mx.client.get_avatar_url(sender)
             content = evt.content
-            msgtype = getattr(content, "msgtype", None)
-            text = getattr(content, "body", "") or " "
-            if msgtype in MEDIA_TYPES:
-                text = " "
+            msgtype = content.msgtype
+            text = content.body or " "
 
-            nested_name = None
+            nested_event = None
             nested_text = None
-            nested_event = await utils.get_reply_event(mx, evt)
-            if nested_event:
-                nested_name = (await mx.client.get_displayname(nested_event.sender)) or "User"
-                nested_text = (getattr(nested_event.content, "body", "") or "").replace("\n", " ")
-                if not nested_text:
-                    nested_text = "(media)"
-                nested_msgtype = getattr(nested_event.content, "msgtype", None)
-                if nested_msgtype == MessageType.VIDEO:
-                    nested_text = "(video)"
-                elif nested_msgtype in (MessageType.IMAGE, MessageType.STICKER):
-                    nested_text = "(image)"
+            nested_name = None
+
+            rel = getattr(content, "relates_to", None)
+            if rel and getattr(rel, "in_reply_to", None):
+                try:
+                    nested_event = await utils.get_reply_event(mx, evt)
+                    if nested_event:
+                        nested_name = nested_event.sender
+                        nested_msgtype = nested_event.content.msgtype
+                        if nested_msgtype == MessageType.VIDEO:
+                            nested_text = "(video)"
+                        elif nested_msgtype in (MessageType.IMAGE, MessageType.STICKER):
+                            nested_text = "(image)"
+                        else:
+                            nested_text = nested_event.content.body or ""
+                except Exception:
+                    pass
 
             av_bytes = None
             if avatar_url:
@@ -238,8 +255,8 @@ class QuoteModule(loader.Module):
                 media_bytes = await utils.download(mx, meta=DownloadMeta(url=evt, thumbnail=True))
                 if not media_bytes:
                     try:
-                        data, *_ = await utils.download(mx, meta=DownloadMeta(url=evt))
-                        media_bytes = data
+                        d = await utils.download(mx, meta=DownloadMeta(url=evt))
+                        media_bytes = d.url if d else None
                     except Exception:
                         pass
 
@@ -260,7 +277,7 @@ class QuoteModule(loader.Module):
         if not self._fonts.get("regular") or not self._fonts.get("bold"):
             raise UsageError(self.strings["font_err"])
 
-        args = await utils.get_args(mx, event)
+        args = await cutils.get_args(mx, event)
         count = 1
         if args:
             try:
@@ -289,7 +306,7 @@ class QuoteModule(loader.Module):
             for evt in context_events:
                 if len(entries) >= count:
                     break
-                if not getattr(evt.content, "body", None):
+                if not evt.content.body:
                     continue
                 entry = await self._build_entry(mx, evt)
                 if entry:

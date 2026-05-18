@@ -27,6 +27,7 @@ from mautrix.types import MessageEvent, MessageType, MediaMessageEventContent, V
 from mxc import utils
 from mxc.types import Video
 from .. import loader
+from ..core import utils as cutils
 
 
 class TikTokPayload(BaseModel):
@@ -65,11 +66,12 @@ class TikTokEngine:
     @staticmethod
     async def transcode_video(raw_bytes: bytes, strings: Dict[str, str]) -> bytes:
         job_id = uuid.uuid4().hex[:8]
+        module_data = cutils.get_data_path()
         in_file = f"tt_raw_{job_id}.mp4"
         out_file = f"tt_final_{job_id}.mp4"
 
-        in_path = await utils.safe_save(raw_bytes, in_file)
-        out_path = str(utils._get_safe_path(out_file))
+        in_path = await cutils.safe_save(raw_bytes, in_file)
+        out_path = str(module_data / out_file)
 
         try:
             process = await asyncio.create_subprocess_exec(
@@ -96,8 +98,8 @@ class TikTokEngine:
         except Exception as e:
             raise RuntimeError(strings["error"].format(err=f"Pipeline failure: {e}"))
         finally:
-            await utils.safe_remove(in_file)
-            await utils.safe_remove(out_file)
+            await cutils.safe_remove(in_file)
+            await cutils.safe_remove(out_file)
 
 
 @loader.tds
@@ -137,9 +139,5 @@ class TikTokDLModule(loader.Module):
                 edit_id=status_id
             )
             
-            # await mx.client.redact(event.room_id, status_id)
-            if status_id != event.event_id:
-                await mx.client.redact(event.room_id, event.event_id)
-
         except Exception as e:
             raise e

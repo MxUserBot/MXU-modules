@@ -23,6 +23,7 @@ import yt_dlp
 from mxc import utils
 from mxc.types import Audio
 from .. import loader
+from ..core import utils as cutils
 
 
 @loader.tds
@@ -53,7 +54,8 @@ class YTMusicModule(loader.Module):
 
         
         file_id = f"ytm_{event.event_id}"
-        out_tmpl = str(utils.COMM_DIR / f"{file_id}.%(ext)s")
+        module_data = cutils.get_data_path()
+        out_tmpl = str(module_data / f"{file_id}.%(ext)s")
         
         ydl_opts = {
             "format": "bestaudio/best",
@@ -87,7 +89,7 @@ class YTMusicModule(loader.Module):
                 title = info.get("title", "Track")
                 uploader = info.get("uploader", "Artist")
                 duration = info.get("duration", 0)
-                final_path = utils.COMM_DIR / f"{file_id}.mp3"
+                final_path = module_data / f"{file_id}.mp3"
 
                 if not final_path.exists():
                     raise FileNotFoundError("Conversion failed.")
@@ -114,4 +116,4 @@ class YTMusicModule(loader.Module):
         finally:
             await mx.client.set_typing(event.room_id, timeout=0)
             for ext in ["mp3", "webm", "m4a", "part"]:
-                await utils.safe_remove(f"{file_id}.{ext}")
+                await cutils.safe_remove(f"{file_id}.{ext}")

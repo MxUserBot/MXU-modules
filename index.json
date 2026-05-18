@@ -20,7 +20,7 @@
     ],
     "name": "AFK",
     "description": "AFK MODULE",
-    "version": "2.3.0"
+    "version": "2.5.0"
   },
   "ask_fsm": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/ask_fsm.py",
@@ -62,8 +62,7 @@
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/demotivator.py",
     "author": "https://github.com/PashaHatsune",
     "dependencies": [
-      "pillow",
-      "telethon"
+      "pillow"
     ],
     "tags": [
       "image",
@@ -118,7 +117,19 @@
     ],
     "name": "ChatMassacre",
     "description": "leaver chats",
-    "version": "3.2.0"
+    "version": "4.0.0"
+  },
+  "love": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/love.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "fun",
+      "animation"
+    ],
+    "name": "MatrixHearts",
+    "description": "nimated hearts in code",
+    "version": "1.1.0"
   },
   "pages": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/pages.py",
@@ -132,6 +143,19 @@
     "name": "EmojiCallbacks",
     "description": "Examples for reaction-driven pages, choices, confirmations and ratings",
     "version": "3.0.0"
+  },
+  "pasta": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/pasta.py",
+    "author": "Unknown",
+    "dependencies": [
+      "faker"
+    ],
+    "tags": [
+      "fun"
+    ],
+    "name": "Pasta",
+    "description": "fun fake dox",
+    "version": "1.0.0"
   },
   "purgeallmymessages": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/purgeallmymessages.py",
@@ -162,15 +186,38 @@
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quotecard.py",
     "author": "https://github.com/PashaHatsune",
     "dependencies": [
-      "pillow"
+      "pillow",
+      "pilmoji",
+      "beautifulsoup4",
+      "markdown"
     ],
     "tags": [
       "image",
-      "media"
+      "media",
+      "formatter"
     ],
     "name": "Quotes",
-    "description": "rendering card-quote style images.",
-    "version": "3.6.0"
+    "description": "Premium Matrix quotes with blurred background and pixel-perfect Apple emojis.",
+    "version": "5.2.0"
+  },
+  "quotifyplus": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/quotifyplus.py",
+    "author": "https://github.com/PashaHatsune",
+    "dependencies": [
+      "pillow",
+      "pilmoji",
+      "beautifulsoup4",
+      "markdown",
+      "cairosvg"
+    ],
+    "tags": [
+      "image",
+      "media",
+      "formatter"
+    ],
+    "name": "QuotifyPlus",
+    "description": "Advanced Quote generator with 4 layouts, glass effects, and fake quotes.",
+    "version": "6.0.0"
   },
   "r": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/r.py",
@@ -184,8 +231,19 @@
     "description": "automated currency conversion",
     "version": "2.0.0"
   },
+  "rname": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/rname.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "utility"
+    ],
+    "name": "RoomName",
+    "description": "Change display name per room",
+    "version": "1.1.0"
+  },
   "rp": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/rp.py",
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/rp.zip",
     "author": "Unknown",
     "dependencies": [],
     "tags": [
@@ -194,7 +252,7 @@
     ],
     "name": "RolePlay",
     "description": "RP actions via .rp",
-    "version": "2.0.0"
+    "version": "3.0.0"
   },
   "rule34": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/rule34.py",
@@ -207,6 +265,18 @@
     "name": "Rule34",
     "description": "API wrapper for Rule34.",
     "version": "2.0.0"
+  },
+  "savemeletemessages": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/savemeletemessages.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "security",
+      "utility"
+    ],
+    "name": "SaveDeleteMessages",
+    "description": "Saving deleted messages. Use this module with caution, because you might get punched in the face for saving deleted messages. :)",
+    "version": "1.1.0"
   },
   "stickers": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/stickers.py",
@@ -222,18 +292,6 @@
     "name": "TGStickerPort",
     "description": "Telegram sticker/emoji migration engine. NOT SUPPORT TGS",
     "version": "3.6.0-TURBO"
-  },
-  "test_cron": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/test_cron.py",
-    "author": "Unknown",
-    "dependencies": [],
-    "tags": [
-      "example",
-      "cron"
-    ],
-    "name": "TestCron",
-    "description": "Test cron: toggle every-5s tick with .test",
-    "version": "1.0.0"
   },
   "testemoji": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/testemoji.py",
@@ -272,6 +330,17 @@
     "description": "google translator",
     "version": "2.0.0"
   },
+  "troll": {
+    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/troll.py",
+    "author": "Unknown",
+    "dependencies": [],
+    "tags": [
+      "fun"
+    ],
+    "name": "MatrixTrollPack",
+    "description": "Troll animation pack. Disclaimer: This is a joke module. It is not intended to offend anyone, not the creators of the Matrix, but anyone else. Do not use on sensitive people. Remove this module.",
+    "version": "1.4.0"
+  },
   "voice": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/voice.py",
     "author": "Unknown",
@@ -282,18 +351,6 @@
     ],
     "name": "VoiceTranscriber",
     "description": "Transcribe voice messages with OpenAI Whisper",
-    "version": "1.0.0"
-  },
-  "wather": {
-    "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/wather.py",
-    "author": "Unknown",
-    "dependencies": [],
-    "tags": [
-      "demo",
-      "watcher"
-    ],
-    "name": "DemoWatcher",
-    "description": "демонстрация watcher и event handler",
     "version": "1.0.0"
   },
   "yt-misic": {

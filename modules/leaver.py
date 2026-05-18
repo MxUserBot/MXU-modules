@@ -1,17 +1,7 @@
-#			__  ____  ___   _               _           _   
-#			|  \/  \ \/ / | | |___  ___ _ __| |__   ___ | |_ 
-#			| |\/| |\  /| | | / __|/ _ \ '__| '_ \ / _ \| __|
-#			| |  | |/  \| |_| \__ \  __/ |  | |_) | (_) | |_ 
-#			|_|  |_/_/\_\\___/|___/\___|_|  |_.__/ \___/ \__| 
-#
-# 🔒      Licensed under the GNU AGPLv3
-# 🌐 https://www.gnu.org/licenses/agpl-3.0.html
-
-
 class Meta:
     name = "ChatMassacre"
     description = "leaver chats"
-    version = "3.2.0"
+    version = "4.0.0"
     tags = ["utility", "admin"]
     author = "https://github.com/PashaHatsune"
 
@@ -24,11 +14,13 @@ from pydantic import BaseModel, model_validator
 
 from mxc import utils
 from mxc.exceptions import UsageError
+from mxc.types import EmojiButton
+from mxc.utils.keyboard import EmojiKeyBoard
 from .. import loader
 
 
 class LeavePayload(BaseModel):
-    mode: str = None
+    mode: str = "n"
     target: str = ""
 
     @model_validator(mode="before")
@@ -36,17 +28,17 @@ class LeavePayload(BaseModel):
     def parse(cls, v: Any):
         if isinstance(v, str):
             parts = v.split(maxsplit=1)
-            if not parts:
+            if not parts or not parts[0]:
                 return {"mode": "all", "target": ""}
             first = parts[0].lower()
-            if first == "--all":
+            if first in ("all"):
                 return {"mode": "all", "target": ""}
             if first in ("u", "n", "id"):
                 return {
                     "mode": first,
                     "target": parts[1] if len(parts) > 1 else "",
                 }
-            raise UsageError("Invalid mode. Use u, n, id, or --all")
+            return {"mode": "n", "target": v.strip()}
         return {"mode": "all", "target": ""} if not v else v
 
 
@@ -55,8 +47,11 @@ class ChatMassacreModule(loader.Module):
     strings = {
         "starting": "🚀 <b>Initiating cleansing protocol...</b><br>Mode: <code>{mode}</code> | Target: <code>{target}</code>",
         "finished": "✅ <b>Cleansing complete.</b><br>Left <b>{count}</b> rooms.",
+        "all_confirm": "⚠️ <b>Really leave ALL rooms?</b>",
+        "cancelled": "❌ Cancelled",
+        "confirm_yes": "✅ Yes",
+        "confirm_no": "❌ No",
     }
-
 
     def __init__(self):
         self.checkers = {
@@ -65,23 +60,11 @@ class ChatMassacreModule(loader.Module):
             "id": self._check_id
         }
 
-
-    async def _check_user(
-        self,
-        mx,
-        room_id: str,
-        target: str
-    ) -> bool:
+    async def _check_user(self, mx, room_id: str, target: str) -> bool:
         members = await mx.client.get_joined_members(room_id)
         return target in members
 
-
-    async def _check_name(
-        self,
-        mx,
-        room_id: str,
-        target: str
-    ) -> bool:
+    async def _check_name(self, mx, room_id: str, target: str) -> bool:
         try:
             name_evt = await mx.client.get_state_event(room_id, EventType.ROOM_NAME)
             room_name = name_evt.get("name", "") if name_evt else ""
@@ -89,76 +72,77 @@ class ChatMassacreModule(loader.Module):
         except Exception:
             return False
 
-
-    async def _check_id(
-        self,
-        mx,
-        room_id: str,
-        target: str
-    ) -> bool:
-        target_ids =[r.strip() for r in target.split(",")]
+    async def _check_id(self, mx, room_id: str, target: str) -> bool:
+        target_ids = [r.strip() for r in target.split(",")]
         return room_id in target_ids
 
-
     @loader.command(name="leave")
-    async def leave_cmd(
-        self,
-        mx,
-        event,
-        payload: LeavePayload = LeavePayload()
-    ):
-        """[--all | <u/n/id> <target>] - Mass leave rooms by User, Name, IDs, or all"""
+    async def leave_cmd(self, mx, event, payload: LeavePayload = LeavePayload()):
+        """[<name> | u <mxid> | id <room_id>] — Leave rooms, or --all for everything"""
 
         if payload.mode == "all":
-            g = await utils.answer(
-                mx,
-                "🚀 <b>Initiating cleansing protocol...</b><br>Mode: <code>all</code>"
-            )
-            log_room = await self._get("log_room_id")
+            confirmed = asyncio.Event()
+            result = [False]
+
+            async def is_confirm(ctx):
+                if ctx.payload == "yes":
+                    result[0] = True
+                confirmed.set()
+
+            markup = EmojiKeyBoard(rows=[[
+                EmojiButton(self.strings.get("confirm_yes"), "yes"),
+                EmojiButton(self.strings.get("confirm_no"), "no"),
+            ]], callback=is_confirm)
+
+            g = await utils.answer(mx, self.strings.get("all_confirm"), event=event, reply_markup=markup)
+
+            try:
+                await asyncio.wait_for(confirmed.wait(), timeout=30)
+            except asyncio.TimeoutError:
+                if g:
+                    await utils.answer(mx, self.strings.get("cancelled"), edit_id=g)
+                return
+
+            if not result[0]:
+                if g:
+                    await utils.answer(mx, self.strings.get("cancelled"), edit_id=g)
+                return
+
+            log_room = mx.log_room
             joined_rooms = await mx.client.get_joined_rooms()
             count = 0
 
             for room_id in joined_rooms:
-                if room_id == event.room_id:
+                if room_id in (log_room, event.room_id):
                     continue
                 try:
-                    self.logger.warning(f"Leaving room {room_id}")
                     await mx.client.leave_room(room_id)
                     count += 1
                     await asyncio.sleep(1)
                 except Exception as e:
                     self.logger.warning(f"Failed to leave {room_id}: {e}")
 
-            await utils.answer(
-                mx,
-                self.strings.get("finished").format(count=count),
-                edit_id=g,
-            )
+            await utils.answer(mx, self.strings.get("finished").format(count=count), edit_id=g)
             return
 
         g = await utils.answer(mx, self.strings.get("starting").format(mode=payload.mode, target=payload.target))
 
-        log_room = await self._get("log_room_id")
+        log_room = mx.log_room
         joined_rooms = await mx.client.get_joined_rooms()
         count = 0
-
         checker_func = self.checkers[payload.mode]
 
         for room_id in joined_rooms:
             if room_id in (log_room, event.room_id):
                 continue
 
-                try:
-                    should_leave = await checker_func(mx, room_id, payload.target)
-
-                    if should_leave:
-                        self.logger.warning(f"Leaving room {room_id} (Condition matched)")
-                        await mx.client.leave_room(room_id)
-                        count += 1
-
-                        await asyncio.sleep(1)
-
-                except Exception as e:
-                    self.logger.warning(f"Failed to leave {room_id}: {e}")
+            try:
+                should_leave = await checker_func(mx, room_id, payload.target)
+                if should_leave:
+                    await mx.client.leave_room(room_id)
+                    count += 1
+                    await asyncio.sleep(1)
+            except Exception as e:
+                self.logger.warning(f"Failed to leave {room_id}: {e}")
 
         await utils.answer(mx, self.strings.get("finished").format(count=count), edit_id=g)

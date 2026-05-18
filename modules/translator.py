@@ -47,18 +47,17 @@ class TranslatorModule(loader.Module):
             try:
                 ctx = await utils.get_context_events(mx, event.room_id, text, limit=0)
                 if ctx:
-                    text = getattr(ctx[-1].content, "body", None)
-                if not text:
-                    raise UsageError("❌ <b>Could not decrypt message.</b>")
-            except UsageError:
-                raise
+                    text = ctx[-1].content.body
             except Exception:
-                raise UsageError("❌ <b>Could not fetch message.</b>")
+                pass
 
         if not text:
-            reply_evt = await utils.get_reply_event(mx, event)
-            if reply_evt:
-                text = getattr(reply_evt.content, "body", None)
+            try:
+                reply_evt = await utils.get_reply_event(mx, event)
+                if reply_evt:
+                    text = reply_evt.content.body
+            except Exception:
+                pass
 
         if not text:
             raise UsageError(self.strings["need_text"])
