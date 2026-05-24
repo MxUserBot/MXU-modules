@@ -97,7 +97,7 @@
   },
   "lastfm": {
     "url": "https://raw.githubusercontent.com/MxUserBot/mx-modules/main/modules/lastfm.py",
-    "author": "https://github.com/PashaHatsune",
+    "author": "https://github.com/PashaHatsune , https://github.com/ArThirtyFour",
     "dependencies": [],
     "tags": [
       "music",
