@@ -13,7 +13,7 @@ class Meta:
     description = "Last.fm synchronization for Matrix RPC."
     version = "3.0.0"
     tags = ["music", "rpc"]
-    author = "https://github.com/PashaHatsune"
+    author = "https://github.com/PashaHatsune , https://github.com/ArThirtyFour"
 
 
 import asyncio
@@ -24,6 +24,7 @@ from mautrix.types import MessageEvent
 
 from mxc import utils
 from .. import loader
+from ..core.utils import escape_html
 
 
 class SongData(BaseModel):
@@ -171,9 +172,8 @@ class LastFMModule(loader.Module):
                             streaming_link=song.song_url
                         )
                 else:
-                    if self._last_track_id is not None:
-                        self._last_track_id = None
-                        await utils.clear_rpc(mx)
+                    self._last_track_id = None
+                    await utils.clear_rpc(mx)
 
             except asyncio.CancelledError:
                 break
@@ -202,7 +202,7 @@ class LastFMModule(loader.Module):
         if not song:
             return await utils.answer(mx, self.strings["not_playing"])
             
-        text = utils.escape_html(song.display_text)
+        text = escape_html(song.display_text)
         await utils.answer(mx, self.strings["now_playing"].format(track=text))
 
 
